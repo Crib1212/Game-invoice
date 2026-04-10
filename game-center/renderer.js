@@ -2,6 +2,8 @@
 const db = require('./database');
 const printReceipt = require('./printer');
 
+const RATE_PER_MINUTE = 10;
+
 let currentUser = null;
 
 
@@ -27,15 +29,19 @@ function login() {
       document.getElementById("app").style.display = "block";
 
       loadSessions();
+      getDailyIncome();
     }
   );
 }
 
 
 // ================= RECEIPT =================
-function generateReceiptNumber(cb) {
+function generateReceipt(cb) {
+
   db.get("SELECT COUNT(*) as count FROM sessions", (err, row) => {
+
     const next = (row?.count || 0) + 1;
+
     cb("WSG-" + String(next).padStart(4, "0"));
   });
 }
@@ -46,9 +52,8 @@ function startSession() {
 
   const station = document.getElementById("station").value;
   const duration = Number(document.getElementById("duration").value);
-  const amount = Number(document.getElementById("amount").value);
 
-  if (!station || !duration || !amount) {
+  if (!station || !duration) {
     alert("Fill all fields");
     return;
   }
@@ -56,7 +61,9 @@ function startSession() {
   const start = new Date();
   const end = new Date(start.getTime() + duration * 60000);
 
-  generateReceiptNumber((receipt) => {
+  const amount = duration * RATE_PER_MINUTE;
+
+  generateReceipt((receipt) => {
 
     db.run(`
       INSERT INTO sessions 
@@ -79,19 +86,19 @@ function startSession() {
       amount
     });
 
-    loadSessions();
-
     document.getElementById("output").innerText =
-      `Receipt: ${receipt}
+`Receipt: ${receipt}
 Station: ${station}
-Start: ${start.toLocaleTimeString()}
-End: ${end.toLocaleTimeString()}
+Duration: ${duration} min
 Amount: ₦${amount}`;
+
+    loadSessions();
+    getDailyIncome();
   });
 }
 
 
-// ================= LOAD SESSIONS =================
+// ================= LOAD DASHBOARD =================
 function loadSessions() {
 
   const table = document.getElementById("sessions");
@@ -140,11 +147,12 @@ function extendSession(id, minutes) {
 
     if (!row) return;
 
-    let newEnd = new Date();
+    const newAmount = Number(row.amount) + (minutes * RATE_PER_MINUTE);
+    const newEnd = new Date(new Date().getTime() + minutes * 60000);
 
     db.run(
-      "UPDATE sessions SET status='Active' WHERE id=?",
-      [id],
+      "UPDATE sessions SET amount=?, status='Active' WHERE id=?",
+      [newAmount, id],
       loadSessions
     );
   });
@@ -161,6 +169,164 @@ function getDailyIncome() {
     rows.forEach(r => total += Number(r.amount || 0));
 
     document.getElementById("income").innerText =
-      "💰 Total Income: ₦" + total;
+      "💰 Today's Income: ₦" + total;
+  });
+}
+function loadAnalytics() {
+
+  db.all("SELECT * FROM sessions", [], (err, rows) => {
+
+    let totalIncome = 0;
+    let active = 0;
+    let ended = 0;
+
+    let stationCount = {};
+
+    rows.forEach(r => {
+
+      totalIncome += Number(r.amount || 0);
+
+      if (r.status === "Active") active++;
+      if (r.status === "Ended") ended++;
+
+      stationCount[r.station] = (stationCount[r.station] || 0) + 1;
+    });
+
+    let mostUsed = Object.keys(stationCount).reduce((a, b) =>
+      stationCount[a] > stationCount[b] ? a : b, "N/A"
+    );
+
+    document.getElementById("analytics").innerHTML = `
+      💰 Total Income: ₦${totalIncome}<br>
+      🟢 Active Sessions: ${active}<br>
+      🔴 Ended Sessions: ${ended}<br>
+      🎮 Most Used Station: ${mostUsed}
+    `;
+  });
+}
+function backupData() {
+
+  db.all("SELECT * FROM sessions", [], (err, sessions) => {
+
+    db.all("SELECT * FROM users", [], (err2, users) => {
+
+      const backup = {
+        sessions,
+        users,
+        date: new Date().toISOString()
+      };
+
+      const fs = require("fs");
+
+      fs.writeFileSync("backup.json", JSON.stringify(backup, null, 2));
+
+      alert("Backup created: backup.json");
+    });
+  });
+}
+function restoreData() {
+
+  const fs = require("fs");
+
+  try {
+
+    const data = JSON.parse(fs.readFileSync("backup.json"));
+
+    // CLEAR OLD DATA FIRST
+    db.run("DELETE FROM sessions");
+    db.run("DELETE FROM users");
+
+    // RESTORE USERS
+    data.users.forEach(u => {
+      db.run(
+        "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+        [u.username, u.password, u.role]
+      );
+    });
+
+    // RESTORE SESSIONS
+    data.sessions.forEach(s => {
+      db.run(`
+        INSERT INTO sessions 
+        (receipt_no, station, start_time, end_time, amount, status)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [
+        s.receipt_no,
+        s.station,
+        s.start_time,
+        s.end_time,
+        s.amount,
+        s.status
+      ]);
+    });
+
+    alert("Restore successful!");
+
+    loadSessions();
+    loadAnalytics();
+
+  } catch (e) {
+    alert("Restore failed: invalid file");
+  }
+}
+function printDailyReport() {
+
+  db.all("SELECT * FROM sessions", [], (err, rows) => {
+
+    const today = new Date().toDateString();
+
+    let totalIncome = 0;
+    let totalSessions = 0;
+    let active = 0;
+    let ended = 0;
+    let stationMap = {};
+
+    rows.forEach(r => {
+
+      if (new Date(r.start_time).toDateString() === today) {
+
+        totalSessions++;
+        totalIncome += Number(r.amount || 0);
+
+        if (r.status === "Active") active++;
+        if (r.status === "Ended") ended++;
+
+        stationMap[r.station] = (stationMap[r.station] || 0) + 1;
+      }
+    });
+
+    let stationText = "";
+
+    for (let s in stationMap) {
+      stationText += `${s}: ${stationMap[s]} sessions\n`;
+    }
+
+    const report = {
+      date: today,
+      totalIncome,
+      totalSessions,
+      active,
+      ended,
+      stationText
+    };
+
+    const printReceipt = require('./printer');
+
+    printReceipt({
+      receipt: "DAILY REPORT",
+      station: "ALL STATIONS",
+      start: today,
+      end: today,
+      amount: totalIncome,
+      extra: `
+TOTAL SESSIONS: ${totalSessions}
+ACTIVE: ${active}
+ENDED: ${ended}
+
+STATION USAGE:
+${stationText}
+      `
+    });
+
   });
 }

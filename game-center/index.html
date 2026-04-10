@@ -73,6 +73,13 @@
     #error {
       color: red;
     }
+
+    #analytics {
+      background: black;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
   </style>
 
 </head>
@@ -99,7 +106,6 @@
   <!-- SESSION CONTROLS -->
   <input id="station" placeholder="Station (PS5-1)">
   <input id="duration" placeholder="Minutes">
-  <input id="amount" placeholder="Amount ₦">
 
   <button onclick="startSession()">Start Session</button>
 
@@ -123,6 +129,14 @@
     <tbody id="sessions"></tbody>
   </table>
 
+  <!-- ANALYTICS -->
+  <h3>📊 Analytics Dashboard</h3>
+  <div id="analytics"></div>
+
+  <button onclick="loadAnalytics()">Refresh Analytics</button>
+  <button onclick="backupData()">💾 Backup Data</button>
+  <button onclick="restoreData()">♻️ Restore Backup</button>
+
   <!-- INCOME -->
   <h3 id="income">💰 Today's Income: ₦0</h3>
   <button onclick="getDailyIncome()">Refresh Income</button>
@@ -132,7 +146,7 @@
     <h2>🖥️ Admin Dashboard</h2>
     <p>Admin controls only visible to admin users</p>
   </div>
-
+<button onclick="printDailyReport()">🧾 Print Daily Report</button>
 </div>
 
 <script src="renderer.js"></script>

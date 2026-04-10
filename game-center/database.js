@@ -27,14 +27,14 @@ db.serialize(() => {
 
 });
 
-// CREATE DEFAULT ADMIN (NO HASH FOR FIRST VERSION)
+// DEFAULT ADMIN
 db.get("SELECT * FROM users WHERE username='admin'", (err, row) => {
   if (!row) {
     db.run(
       "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
       ["admin", "1234", "admin"]
     );
-    console.log("Admin created → admin / 1234");
+    console.log("Admin created: admin / 1234");
   }
 });
 
