@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Game Center System</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 95%;
+      padding: 12px;
+      background: orange;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px 0;
+    }
+
+    button:hover {
+      background: darkorange;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #444;
+      padding: 8px;
+    }
+
+    #output {
+      margin-top: 15px;
+      text-align: left;
+      white-space: pre-line;
+      background: #000;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    #adminPanel {
+      display: none;
+      margin-top: 20px;
+      padding: 10px;
+      border-top: 2px solid orange;
+    }
+
+    #error {
+      color: red;
+    }
+  </style>
+
+</head>
+
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="container">
+  <h2>🔐 Login</h2>
+
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+
+  <p id="error"></p>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="container" style="display:none;">
+
+  <h1>🎮 Game Center System</h1>
+
+  <!-- SESSION CONTROLS -->
+  <input id="station" placeholder="Station (PS5-1)">
+  <input id="duration" placeholder="Minutes">
+  <input id="amount" placeholder="Amount ₦">
+
+  <button onclick="startSession()">Start Session</button>
+
+  <p id="output"></p>
+
+  <!-- DASHBOARD -->
+  <h3>📊 Active Sessions</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Receipt</th>
+        <th>Station</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+
+    <tbody id="sessions"></tbody>
+  </table>
+
+  <!-- INCOME -->
+  <h3 id="income">💰 Today's Income: ₦0</h3>
+  <button onclick="getDailyIncome()">Refresh Income</button>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel">
+    <h2>🖥️ Admin Dashboard</h2>
+    <p>Admin controls only visible to admin users</p>
+  </div>
+
+</div>
+
+<script src="renderer.js"></script>
+
+</body>
+</html>
