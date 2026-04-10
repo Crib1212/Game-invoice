@@ -4,7 +4,6 @@ const db = new sqlite3.Database('./gamecenter.db');
 
 db.serialize(() => {
 
-  // USERS
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,7 +13,6 @@ db.serialize(() => {
     )
   `);
 
-  // SESSIONS
   db.run(`
     CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,13 +20,11 @@ db.serialize(() => {
       station TEXT,
       start_time TEXT,
       end_time TEXT,
-      end_time_real TEXT,
-      amount INTEGER,
+      amount REAL,
       status TEXT
     )
   `);
 
-  // SETTINGS (IMPORTANT FIX)
   db.run(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
@@ -36,17 +32,18 @@ db.serialize(() => {
     )
   `);
 
-  // DEFAULT RATE (₦50 per 5 mins)
+  // default admin
   db.run(`
-    INSERT OR IGNORE INTO settings (key, value)
-    VALUES ('rate_per_5min', '50')
+    INSERT OR IGNORE INTO users (username,password,role)
+    VALUES ('admin','admin','admin')
   `);
 
-  // DEFAULT ADMIN PASSWORD = 1234
+  // default rate
   db.run(`
-    INSERT OR IGNORE INTO users (username, password, role)
-    VALUES ('admin', '1234', 'admin')
+    INSERT OR IGNORE INTO settings (key,value)
+    VALUES ('rate_per_5min','50')
   `);
+
 });
 
 module.exports = db;

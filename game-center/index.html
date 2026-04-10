@@ -1,42 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Game Center PRO</title>
+  <title>Game Center LIVE POS</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginPage">
   <h2>Login</h2>
   <input id="username" placeholder="Username">
-  <input id="password" type="password" placeholder="Password">
   <button onclick="login()">Login</button>
   <p id="error"></p>
 </div>
 
-<!-- APP -->
 <div id="app" style="display:none;">
 
-  <h1>🎮 GAME CENTER PRO</h1>
+  <h1>🎮 GAME CENTER LIVE POS</h1>
 
   <div id="adminPanel" style="display:none;">
     <h3>Admin Panel</h3>
-
-    <input id="newPassword" placeholder="Set New Password">
-    <button onclick="changePassword()">Change Password</button>
-
-    <input id="rate" placeholder="Rate per 5 mins">
+    <input id="rate" placeholder="Rate per 5 min">
+    <div id="stationReport"></div>
+<button onclick="getStationSummary()">Refresh Station Report</button>
     <button onclick="setRate()">Set Rate</button>
   </div>
 
   <hr>
 
-  <input id="station" placeholder="Station (PS5-1)">
+  <input id="station" placeholder="Station">
   <input id="duration" placeholder="Minutes">
-
-  <button onclick="startSession()">Start Session</button>
+  <button onclick="startSession()">Start</button>
 
   <h3 id="income">Income: ₦0</h3>
 
@@ -48,7 +42,7 @@
         <th>Start</th>
         <th>End</th>
         <th>Status</th>
-        <th>Actions</th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody id="sessions"></tbody>

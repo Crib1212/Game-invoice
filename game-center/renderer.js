@@ -1,19 +1,20 @@
 const db = require('./database');
 
 let currentUser = null;
+let LIVE = null;
 
-// ---------- LOGIN ----------
+// ================= LOGIN =================
 function login() {
-  const u = document.getElementById("username").value;
-  const p = document.getElementById("password").value;
+
+  const username = document.getElementById("username").value;
 
   db.get(
-    "SELECT * FROM users WHERE username=? AND password=?",
-    [u, p],
+    "SELECT * FROM users WHERE username=?",
+    [username],
     (err, user) => {
 
       if (!user) {
-        document.getElementById("error").innerText = "Invalid login";
+        document.getElementById("error").innerText = "User not found";
         return;
       }
 
@@ -26,151 +27,191 @@ function login() {
         document.getElementById("adminPanel").style.display = "block";
       }
 
-      loadSessions();
-      getIncome();
+      startLiveMode();
     }
   );
 }
 
-// ---------- GET RATE ----------
+// ================= RATE =================
 function getRate(cb) {
-  db.get("SELECT value FROM settings WHERE key='rate_per_5min'", (e, r) => {
-    cb(Number(r?.value || 50));
+  db.get("SELECT value FROM settings WHERE key='rate_per_5min'", (e,r)=>{
+    cb(Number(r.value));
   });
 }
 
-// ---------- RECEIPT ----------
-function receipt(cb) {
-  db.get("SELECT COUNT(*) as c FROM sessions", (e, r) => {
-    cb("WSG-" + String((r?.c || 0) + 1).padStart(4, "0"));
+// ================= RECEIPT =================
+function receipt(cb){
+  db.get("SELECT COUNT(*) c FROM sessions",(e,r)=>{
+    cb("WSG-"+String(r.c+1).padStart(4,'0'));
   });
 }
 
-// ---------- START SESSION ----------
+// ================= START SESSION =================
 function startSession() {
 
   const station = document.getElementById("station").value;
-  const minutes = Number(document.getElementById("duration").value);
-
-  if (!station || !minutes) return alert("Fill all fields");
+  const duration = Number(document.getElementById("duration").value);
 
   getRate(rate => {
 
-    const amount = (minutes / 5) * rate;
+    const amount = (duration/5)*rate;
 
     const start = new Date();
-    const end = new Date(start.getTime() + minutes * 60000);
+    const end = new Date(start.getTime()+duration*60000);
 
-    receipt(no => {
+    receipt(r => {
 
       db.run(`
-        INSERT INTO sessions 
-        (receipt_no, station, start_time, end_time, end_time_real, amount, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [
-        no,
-        station,
+        INSERT INTO sessions
+        (receipt_no,station,start_time,end_time,amount,status)
+        VALUES (?,?,?,?,?,?)
+      `,[
+        r, station,
         start.toLocaleTimeString(),
         end.toLocaleTimeString(),
-        end.toISOString(),
         amount,
         "Active"
       ]);
 
-      loadSessions();
-      getIncome();
     });
+
   });
 }
 
-// ---------- LOAD ----------
+// ================= LIVE MODE =================
+function startLiveMode() {
+
+  if (LIVE) clearInterval(LIVE);
+
+  LIVE = setInterval(() => {
+
+    autoExpire();
+    loadSessions();
+    getIncome();
+
+  }, 1000);
+}
+setInterval(() => {
+  getStationSummary();
+}, 3000);
+
+// ================= AUTO EXPIRE =================
+function autoExpire() {
+
+  const now = new Date();
+
+  db.all("SELECT * FROM sessions",(e,rows)=>{
+
+    rows.forEach(r=>{
+
+      const end = new Date(`1970-01-01T${r.end_time}`);
+
+      if(now >= end && r.status === "Active") {
+
+        db.run("UPDATE sessions SET status='Ended' WHERE id=?",[r.id]);
+      }
+
+    });
+
+  });
+
+}
+
+// ================= LOAD =================
 function loadSessions() {
 
   const table = document.getElementById("sessions");
   table.innerHTML = "";
 
-  db.all("SELECT * FROM sessions ORDER BY id DESC", (e, rows) => {
+  db.all("SELECT * FROM sessions ORDER BY id DESC",(e,rows)=>{
+
+    rows.forEach(r=>{
+
+      let tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${r.receipt_no}</td>
+        <td>${r.station}</td>
+        <td>${r.start_time}</td>
+        <td>${r.end_time}</td>
+        <td>${r.status}</td>
+        <td><button onclick="endSession(${r.id})">End</button></td>
+      `;
+
+      table.appendChild(tr);
+    });
+
+  });
+}
+
+// ================= END =================
+function endSession(id){
+  db.run("UPDATE sessions SET status='Ended' WHERE id=?",[id]);
+}
+
+// ================= INCOME =================
+function getIncome(){
+
+  db.all("SELECT amount FROM sessions",(e,r)=>{
+
+    let total = 0;
+
+    r.forEach(x=> total += Number(x.amount||0));
+
+    document.getElementById("income").innerText =
+      "Income: ₦"+total;
+  });
+}
+
+// ================= RATE UPDATE =================
+function setRate(){
+  const rate = document.getElementById("rate").value;
+
+  db.run("UPDATE settings SET value=? WHERE key='rate_per_5min'",[rate]);
+}
+function getStationSummary() {
+
+  db.all("SELECT * FROM sessions", [], (err, rows) => {
+
+    let stationMap = {};
 
     rows.forEach(r => {
 
-      const now = new Date();
-      const end = new Date(r.end_time_real);
+      if (!stationMap[r.station]) {
+        stationMap[r.station] = {
+          total: 0,
+          count: 0,
+          active: 0
+        };
+      }
 
-      const status = now >= end ? "Expired" : r.status;
+      stationMap[r.station].total += Number(r.amount || 0);
+      stationMap[r.station].count += 1;
 
-      table.innerHTML += `
-        <tr>
-          <td>${r.receipt_no}</td>
-          <td>${r.station}</td>
-          <td>${r.start_time}</td>
-          <td>${r.end_time}</td>
-          <td>${status}</td>
-          <td>
-            <button onclick="endSession(${r.id})">End</button>
-            <button onclick="extendSession(${r.id},30)">+30</button>
-          </td>
-        </tr>
-      `;
+      if (r.status === "Active") {
+        stationMap[r.station].active += 1;
+      }
     });
+
+    renderStationSummary(stationMap);
   });
 }
 
-// ---------- END ----------
-function endSession(id) {
-  db.run(
-    "UPDATE sessions SET status='Ended' WHERE id=?",
-    [id],
-    loadSessions
-  );
-}
+function renderStationSummary(data) {
 
-// ---------- EXTEND ----------
-function extendSession(id, mins) {
+  let html = "<h3>📊 Station Report</h3>";
 
-  db.get("SELECT * FROM sessions WHERE id=?", [id], (e, r) => {
+  for (let station in data) {
 
-    const newEnd = new Date(new Date(r.end_time_real).getTime() + mins * 60000);
+    html += `
+      <div style="background:#222;padding:10px;margin:5px;">
+        <h4>${station}</h4>
+        💰 Total: ₦${data[station].total}<br>
+        🎮 Sessions: ${data[station].count}<br>
+        🟢 Active: ${data[station].active}
+      </div>
+    `;
+  }
 
-    db.run(
-      "UPDATE sessions SET end_time_real=? WHERE id=?",
-      [newEnd.toISOString(), id],
-      loadSessions
-    );
-  });
-}
-
-// ---------- INCOME ----------
-function getIncome() {
-
-  db.all("SELECT amount FROM sessions", (e, rows) => {
-
-    let total = 0;
-    rows.forEach(r => total += Number(r.amount || 0));
-
-    document.getElementById("income").innerText =
-      "💰 Income: ₦" + total;
-  });
-}
-
-// ---------- ADMIN ----------
-function changePassword() {
-
-  const p = document.getElementById("newPassword").value;
-
-  db.run(
-    "UPDATE users SET password=? WHERE username='admin'",
-    [p],
-    () => alert("Password updated")
-  );
-}
-
-function setRate() {
-
-  const r = document.getElementById("rate").value;
-
-  db.run(
-    "INSERT OR REPLACE INTO settings (key,value) VALUES ('rate_per_5min',?)",
-    [r],
-    () => alert("Rate updated")
-  );
+  document.getElementById("stationReport").innerHTML = html;
 }
