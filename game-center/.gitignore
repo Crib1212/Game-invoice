@@ -1,0 +1,6 @@
+node_modules/
+gamecenter.db
+backup.json
+*.log
+dist/
+release/
