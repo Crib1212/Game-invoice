@@ -1,0 +1,31 @@
+{
+  "sessions": [
+    {
+      "id": 9,
+      "receipt_no": "WSG-0001",
+      "station": "chinedu",
+      "start_time": "6:00:50 PM",
+      "end_time": "6:30:50 PM",
+      "amount": 5800,
+      "status": "Active"
+    },
+    {
+      "id": 10,
+      "receipt_no": "WSG-0002",
+      "station": "achiver",
+      "start_time": "6:37:40 PM",
+      "end_time": "6:47:40 PM",
+      "amount": 100,
+      "status": "Active"
+    }
+  ],
+  "users": [
+    {
+      "id": 2,
+      "username": "admin",
+      "password": "1234",
+      "role": "admin"
+    }
+  ],
+  "date": "2026-04-10T01:38:09.599Z"
+}
