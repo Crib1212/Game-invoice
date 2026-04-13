@@ -14,11 +14,19 @@
 
   <input id="rate" placeholder="Rate per 10 min">
   <button onclick="setRate()">Set Rate</button>
-  <button onclick="loadDailyReport()">Daily Report</button>
 
+  <button onclick="toggleDailyReportPanel()">📅 Daily Report</button>
+
+  <div id="dailyReportPanel" style="display:none; margin-top:10px;">
+    <div id="dailyReport"></div>
+  </div>
+
+<button onclick="toggleStationReportPanel()">🎮 Station Report</button>
+
+<div id="stationReportPanel" style="display:none; margin-top:10px;">
   <div id="stationReport"></div>
 </div>
-
+</div>
 <hr>
 
 <input id="station" placeholder="Station">
@@ -27,9 +35,6 @@
 
 <h3 id="income">Income: ₦0</h3>
 
-<!-- DAILY REPORT -->
-<h2>📅 Daily Reports</h2>
-<div id="dailyReport"></div>
 
 <hr>
 
