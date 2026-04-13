@@ -1,32 +1,29 @@
 const sqlite3 = require('sqlite3').verbose();
-<<<<<<< HEAD
-
-const db = new sqlite3.Database('./gamecenter.db');
-=======
 const path = require('path');
 
-// Detect if app is packaged
-const isDev = process.env.NODE_ENV !== 'production';
+// Detect environment (Electron safe)
+const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
 
-// Use correct path
 let dbPath;
 
 if (isDev) {
-  // Development (your folder)
+  // Development mode
   dbPath = path.join(__dirname, 'gamecenter.db');
 } else {
-  // Production (installed app)
+  // Production mode (Electron installed app)
   const { app } = require('electron');
   dbPath = path.join(app.getPath('userData'), 'gamecenter.db');
 }
 
-console.log("DB Path:", dbPath);
+console.log("📦 Database Path:", dbPath);
 
+// Create database
 const db = new sqlite3.Database(dbPath);
->>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
 
+// ================= INIT TABLES =================
 db.serialize(() => {
 
+  // USERS TABLE
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,6 +33,7 @@ db.serialize(() => {
     )
   `);
 
+  // SESSIONS TABLE (core gaming records)
   db.run(`
     CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,11 +41,12 @@ db.serialize(() => {
       station TEXT,
       start_time TEXT,
       end_time TEXT,
-      amount REAL,
-      status TEXT
+      amount REAL DEFAULT 0,
+      status TEXT DEFAULT 'Active'
     )
   `);
 
+  // SETTINGS TABLE (rate, config etc)
   db.run(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
@@ -55,27 +54,16 @@ db.serialize(() => {
     )
   `);
 
-<<<<<<< HEAD
-  // default admin
-=======
-  // Default admin
->>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
+  // ================= DEFAULT ADMIN =================
   db.run(`
-    INSERT OR IGNORE INTO users (username,password,role)
-    VALUES ('admin','admin','admin')
+    INSERT OR IGNORE INTO users (username, password, role)
+    VALUES ('admin', 'admin', 'admin')
   `);
 
-<<<<<<< HEAD
-  // default rate
+  // ================= DEFAULT RATE =================
   db.run(`
-    INSERT OR IGNORE INTO settings (key,value)
-    VALUES ('rate_per_5min','50')
-=======
-  // Default rate
-  db.run(`
-    INSERT OR IGNORE INTO settings (key,value)
-    VALUES ('rate_per_10min','300')
->>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
+    INSERT OR IGNORE INTO settings (key, value)
+    VALUES ('rate_per_10min', '50')
   `);
 
 });

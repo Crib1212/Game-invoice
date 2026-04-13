@@ -1,29 +1,41 @@
 const { app, BrowserWindow } = require('electron');
-<<<<<<< HEAD
-
-function createWindow() {
-=======
 const path = require('path');
 
-function createWindow() {
+let mainWindow;
 
->>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
-  const win = new BrowserWindow({
-    width: 1000,
-    height: 700,
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1100,
+    height: 750,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      enableRemoteModule: true
     }
   });
 
-  win.loadFile('index.html');
-<<<<<<< HEAD
-=======
+  mainWindow.loadFile('index.html');
 
-  // 🔥 THIS WILL SHOW ERRORS
-  
->>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
+  // Optional: open dev tools for debugging
+  // mainWindow.webContents.openDevTools();
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
