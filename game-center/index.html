@@ -7,48 +7,47 @@
 
 <body>
 
-<div id="loginPage">
-  <h2>Login</h2>
-  <input id="username" placeholder="Username">
-  <button onclick="login()">Login</button>
-  <p id="error"></p>
+<h1>🎮 ACHIVER GAME CENTER</h1>
+
+<div>
+  <h3>Admin Panel</h3>
+
+  <input id="rate" placeholder="Rate per 10 min">
+  <button onclick="setRate()">Set Rate</button>
+  <button onclick="loadDailyReport()">Daily Report</button>
+
+  <div id="stationReport"></div>
 </div>
 
-<div id="app" style="display:none;">
+<hr>
 
-  <h1>🎮 ACHIVER GAME CENTER</h1>
+<input id="station" placeholder="Station">
+<input id="duration" placeholder="Minutes">
+<button onclick="startSession()">Start</button>
 
-  <div id="adminPanel" style="display:none;">
-    <h3>Admin Panel</h3>
-    <input id="rate" placeholder="Rate per 10 min">
-    <div id="stationReport"></div>
-<button onclick="getStationSummary()">Refresh Station Report</button>
-    <button onclick="setRate()">Set Rate</button>
-  </div>
+<h3 id="income">Income: ₦0</h3>
 
-  <hr>
+<!-- DAILY REPORT SECTION -->
+<h2>📅 Daily Reports</h2>
+<div id="dailyReport"></div>
 
-  <input id="station" placeholder="Station">
-  <input id="duration" placeholder="Minutes">
-  <button onclick="startSession()">Start</button>
+<hr>
 
-  <h3 id="income">Income: ₦0</h3>
-
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Receipt</th>
-        <th>Station</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="sessions"></tbody>
-  </table>
-
-</div>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Receipt</th>
+      <th>Station</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Date</th>
+      <th>Status</th>
+      <th>Countdown</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="sessions"></tbody>
+</table>
 
 <script src="renderer.js"></script>
 </body>
