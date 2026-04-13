@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "game-center",
   "version": "1.0.0",
   "description": "",
@@ -20,3 +21,31 @@
     "sqlite3": "^6.0.1"
   }
 }
+=======
+  "name": "game-center-pro",
+  "version": "1.0.0",
+  "main": "main.js",
+  "author": "Game Center Pro",
+  "description": "Game Center POS System",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-packager . GameCenterPro --platform=win32 --arch=x64 --out=dist --overwrite",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.gamecenter.pos",
+    "productName": "GameCenterPro",
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-packager": "^17.1.2",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6"
+  }
+}
+>>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8

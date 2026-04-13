@@ -7,6 +7,7 @@
 
 <body>
 
+<<<<<<< HEAD
 <div id="loginPage">
   <h2>Login</h2>
   <input id="username" placeholder="Username">
@@ -49,6 +50,49 @@
   </table>
 
 </div>
+=======
+<h1>🎮 ACHIVER GAME CENTER</h1>
+
+<div>
+  <h3>Admin Panel</h3>
+
+  <input id="rate" placeholder="Rate per 10 min">
+  <button onclick="setRate()">Set Rate</button>
+  <button onclick="loadDailyReport()">Daily Report</button>
+
+  <div id="stationReport"></div>
+</div>
+
+<hr>
+
+<input id="station" placeholder="Station">
+<input id="duration" placeholder="Minutes">
+<button onclick="startSession()">Start</button>
+
+<h3 id="income">Income: ₦0</h3>
+
+<!-- DAILY REPORT SECTION -->
+<h2>📅 Daily Reports</h2>
+<div id="dailyReport"></div>
+
+<hr>
+
+<table border="1">
+  <thead>
+    <tr>
+      <th>Receipt</th>
+      <th>Station</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Date</th>
+      <th>Status</th>
+      <th>Countdown</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="sessions"></tbody>
+</table>
+>>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
 
 <script src="renderer.js"></script>
 </body>

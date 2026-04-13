@@ -1,5 +1,13 @@
 node_modules/
+<<<<<<< HEAD
 gamecenter.db
 backup.json
 *.log
 dist/
+=======
+release/
+dist/
+*.exe
+*.asar
+*.dll
+>>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
