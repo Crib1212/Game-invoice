@@ -2,50 +2,15 @@
   "name": "game-center-pro",
   "version": "1.0.0",
   "main": "main.js",
-  "author": "Glory",
-  "description": "Game Center POS System",
-
-  "scripts": {
-    "start": "electron .",
-    "package": "electron-packager . GameCenterPro --platform=win32 --arch=x64 --out=dist --overwrite",
-    "build": "electron-builder --win"
-  },
-
   "build": {
-    "appId": "com.gamecenter.pos",
-    "productName": "GameCenterPro",
-
-    "asar": true,
-
-    "directories": {
-      "output": "dist"
-    },
-
-    "files": [
-      "**/*"
-    ],
-
+    "appId": "com.gamecenter.app",
+    "productName": "Game Center",
     "win": {
-      "target": "nsis",
-      "icon": "icon.ico",
-      "sign": false
+      "target": "nsis"
     },
-
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "GameCenterPro"
+      "oneClick": true,
+      "perMachine": false
     }
-  },
-
-  "devDependencies": {
-    "electron": "^25.0.0",
-    "electron-builder": "^24.13.3",
-    "electron-packager": "^17.1.2"
-  },
-
-  "dependencies": {
   }
 }
