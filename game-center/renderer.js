@@ -30,10 +30,16 @@ window.addEventListener("DOMContentLoaded", () => {
 // ================= RATE =================
 function getRate(cb) {
   db.get("SELECT value FROM settings WHERE key='rate_per_10min'", (e, r) => {
-    cb(Number(r?.value || 50));
+
+    let data = { rate: 50, rateType: 10 };
+
+    try {
+      if (r?.value) data = JSON.parse(r.value);
+    } catch (err) {}
+
+    cb(data);
   });
 }
-
 // ================= RECEIPT =================
 function receipt(cb) {
   db.get("SELECT COUNT(*) as c FROM sessions", (e, r) => {
@@ -49,9 +55,13 @@ function startSession() {
 
   if (!station || !duration) return;
 
-  getRate(rate => {
+  getRate(data => {
 
-    const amount = (duration / 10) * rate;
+    const rate = data.rate;
+    const rateType = data.rateType;
+
+    // ✅ FIXED CALCULATION
+    const amount = (duration / rateType) * rate;
 
     const start = new Date();
     const end = new Date(start.getTime() + duration * 60000);
@@ -69,17 +79,16 @@ function startSession() {
         end.toISOString(),
         amount,
         "Active"
-      ], () => {
+      ]);
 
-        loadSessions();
-        updateIncome();
-        loadDailyReport();
-        loadStationReport();
-      });
+      loadSessions();
+      loadDailyReport();
+      loadStationReport();
+      updateIncome();
     });
+
   });
 }
-
 // ================= LIVE ENGINE =================
 function startLive() {
 
@@ -229,7 +238,7 @@ function loadDailyReport() {
     Object.keys(map).sort().reverse().forEach(date => {
 
       html += `
-        <div style="padding:10px;margin:5px;background:#222;color:orange;border-radius:6px;">
+        <div style="padding:10px;margin:5px;background:#222;color:white;border-radius:6px;">
           <b>📅 ${date}</b><br>
           🎮 Sessions: ${map[date].count}<br>
           💰 Total: ₦${map[date].total}
@@ -264,7 +273,7 @@ function loadStationReport() {
     Object.keys(map).forEach(station => {
 
       html += `
-        <div style="padding:10px;margin:5px;background:#1e1e1e;color:orange;border-radius:6px;">
+        <div style="padding:10px;margin:5px;background:#1e1e1e;color:white;border-radius:6px;">
           <b>🎮 ${station}</b><br>
           📊 Sessions: ${map[station].count}<br>
           💰 Total: ₦${map[station].total}
@@ -279,11 +288,22 @@ function loadStationReport() {
 
 // ================= RATE =================
 function setRate() {
-  const rate = document.getElementById("rate").value;
+  const rate = Number(document.getElementById("rate").value);
+  const rateType = Number(document.getElementById("rateType").value);
+
+  if (!rate || !rateType) {
+    showMsg("❌ Enter valid rate");
+    return;
+  }
 
   db.run(
     "UPDATE settings SET value=? WHERE key='rate_per_10min'",
-    [rate]
+    [JSON.stringify({ rate, rateType })],
+    (err) => {
+      if (err) return showMsg("❌ Failed to set rate");
+
+      showMsg(`✅ Rate set: ₦${rate} per ${rateType} minutes`);
+    }
   );
 }
 
@@ -313,4 +333,14 @@ function toggleStationReportPanel() {
   if (panel.style.display === "block") {
     loadStationReport();
   }
+}
+function showMsg(text) {
+  const box = document.getElementById("msgBox");
+  if (!box) return;
+
+  box.innerText = text;
+
+  setTimeout(() => {
+    box.innerText = "";
+  }, 3000);
 }

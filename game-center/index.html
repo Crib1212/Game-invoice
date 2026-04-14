@@ -12,8 +12,21 @@
 <div>
   <h3>Admin Panel</h3>
 
-  <input id="rate" placeholder="Rate per 10 min">
-  <button onclick="setRate()">Set Rate</button>
+<div class="rate-box">
+
+  <input id="rate" type="number" placeholder="Enter rate (₦)" />
+
+  <select id="rateType">
+    <option value="1">Per 1 min</option>
+    <option value="7">Per 7 min</option>
+    <option value="10" selected>Per 10 min</option>
+    <option value="20">Per 20 min</option>
+  </select>
+
+  <button onclick="setRate()">💾 Set rate</button>
+  <div id="msgBox" style="margin-top:10px;color:lime;font-weight:bold;"></div>
+
+</div>
 
   <button onclick="toggleDailyReportPanel()">📅 Daily Report</button>
 
@@ -21,7 +34,7 @@
     <div id="dailyReport"></div>
   </div>
 
-<button onclick="toggleStationReportPanel()">🎮 Station Report</button>
+<button onclick="toggleStationReportPanel()">🎮 Today's Report</button>
 
 <div id="stationReportPanel" style="display:none; margin-top:10px;">
   <div id="stationReport"></div>

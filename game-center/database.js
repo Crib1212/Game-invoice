@@ -63,7 +63,7 @@ db.serialize(() => {
   // ================= DEFAULT RATE =================
   db.run(`
     INSERT OR IGNORE INTO settings (key, value)
-    VALUES ('rate_per_10min', '50')
+    VALUES ('rate_per_10min', '')
   `);
 
 });

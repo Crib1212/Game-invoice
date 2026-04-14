@@ -37,3 +37,47 @@ th, td {
   border: 1px solid #444;
   padding: 10px;
 }
+.rate-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #111;
+  padding: 12px;
+  border-radius: 10px;
+  width: fit-content;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+.rate-box input,
+.rate-box select {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  font-size: 14px;
+}
+
+.rate-box input {
+  width: 120px;
+}
+
+.rate-box select {
+  background: #222;
+  color: white;
+  cursor: pointer;
+}
+
+.rate-box button {
+  background: #00c853;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.rate-box button:hover {
+  background: #00e676;
+}
