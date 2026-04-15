@@ -1,16 +1,39 @@
 {
-  "name": "game-center-pro",
+  "name": "witty-games",
   "version": "1.0.0",
+  "description": "Game Center Manager",
   "main": "main.js",
+  "author": "Witty Styzes & Games",
+
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+
   "build": {
-    "appId": "com.gamecenter.app",
-    "productName": "Game Center",
+    "appId": "com.witty.games",
+    "productName": "Witty Styzes & Games",
+
+    "asar": true,
+
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "icon.ico"
     },
+
     "nsis": {
-      "oneClick": true,
-      "perMachine": false
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
     }
+  },
+
+  "dependencies": {
+    "sqlite3": "^5.1.6"
+  },
+
+  "devDependencies": {
+    "electron": "^41.2.0",
+    "electron-builder": "^26.8.1"
   }
 }
