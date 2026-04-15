@@ -8,38 +8,27 @@ window.addEventListener("DOMContentLoaded", () => {
   const station = document.getElementById("station");
   const duration = document.getElementById("duration");
 
-  if (station) {
-    station.addEventListener("keydown", e => {
-      if (e.key === "Enter") startSession();
-    });
-  }
+  // ENTER KEY SUPPORT
+  station.addEventListener("keydown", e => {
+    if (e.key === "Enter") startSession();
+  });
 
-  if (duration) {
-    duration.addEventListener("keydown", e => {
-      if (e.key === "Enter") startSession();
-    });
-  }
+  duration.addEventListener("keydown", e => {
+    if (e.key === "Enter") startSession();
+  });
 
   loadSessions();
-  updateIncome();
   loadDailyReport();
-  loadStationReport();
   startLive();
 });
 
 // ================= RATE =================
 function getRate(cb) {
   db.get("SELECT value FROM settings WHERE key='rate_per_10min'", (e, r) => {
-
-    let data = { rate: 50, rateType: 10 };
-
-    try {
-      if (r?.value) data = JSON.parse(r.value);
-    } catch (err) {}
-
-    cb(data);
+    cb(Number(r?.value || 50));
   });
 }
+
 // ================= RECEIPT =================
 function receipt(cb) {
   db.get("SELECT COUNT(*) as c FROM sessions", (e, r) => {
@@ -55,13 +44,9 @@ function startSession() {
 
   if (!station || !duration) return;
 
-  getRate(data => {
+  getRate(rate => {
 
-    const rate = data.rate;
-    const rateType = data.rateType;
-
-    // ✅ FIXED CALCULATION
-    const amount = (duration / rateType) * rate;
+    const amount = (duration / 10) * rate;
 
     const start = new Date();
     const end = new Date(start.getTime() + duration * 60000);
@@ -83,12 +68,11 @@ function startSession() {
 
       loadSessions();
       loadDailyReport();
-      loadStationReport();
       updateIncome();
     });
-
   });
 }
+
 // ================= LIVE ENGINE =================
 function startLive() {
 
@@ -140,6 +124,7 @@ function loadSessions() {
           <td>${r.station}</td>
           <td>${new Date(r.start_time).toLocaleTimeString()}</td>
           <td>${new Date(r.end_time).toLocaleTimeString()}</td>
+
           <td>${date}</td>
 
           <td>
@@ -164,9 +149,11 @@ function loadSessions() {
 
 // ================= COUNTDOWN =================
 function updateCountdown() {
+
   const now = Date.now();
 
   document.querySelectorAll("tr[data-end]").forEach(row => {
+
     const end = Number(row.dataset.end);
     const cell = row.querySelector(".countdown");
 
@@ -174,32 +161,21 @@ function updateCountdown() {
 
     const diff = end - now;
 
-    // TIME ENDED
     if (diff <= 0) {
       cell.innerText = "ENDED";
-      cell.style.color = "orange";   // 🔴 ended text
-      cell.style.fontWeight = "bold";
       return;
     }
 
-    // COUNTDOWN ACTIVE
     const m = Math.floor(diff / 60000);
     const s = Math.floor((diff % 60000) / 1000);
 
     cell.innerText = `${m}m ${s}s`;
-
-    cell.style.color = "orange";   // ⚪ countdown text
-    cell.style.fontWeight = "bold";
   });
 }
+
 // ================= END SESSION =================
 function endSession(id) {
-  db.run("UPDATE sessions SET status='Ended' WHERE id=?", [id], () => {
-    loadSessions();
-    updateIncome();
-    loadDailyReport();
-    loadStationReport();
-  });
+  db.run("UPDATE sessions SET status='Ended' WHERE id=?", [id], loadSessions);
 }
 
 // ================= INCOME =================
@@ -208,18 +184,19 @@ function updateIncome() {
   db.all("SELECT amount FROM sessions", (e, rows) => {
 
     let total = 0;
+
     rows.forEach(r => total += Number(r.amount || 0));
 
     document.getElementById("income").innerText = "Income: ₦" + total;
   });
 }
 
-// ================= DAILY REPORT (TOGGLE PANEL READY) =================
+// ================= DAILY REPORT =================
 function loadDailyReport() {
 
   db.all("SELECT * FROM sessions", (e, rows) => {
 
-    const map = {};
+    let map = {};
 
     rows.forEach(r => {
 
@@ -241,106 +218,53 @@ function loadDailyReport() {
         <div style="padding:10px;margin:5px;background:#222;color:white;border-radius:6px;">
           <b>📅 ${date}</b><br>
           🎮 Sessions: ${map[date].count}<br>
-          💰 Total: ₦${map[date].total}
+          💰 Total: ₦${map[date].total}<br>
+
+          <button onclick="viewDay('${date}')">
+            View Details
+          </button>
         </div>
       `;
     });
 
-    const el = document.getElementById("dailyReport");
-    if (el) el.innerHTML = html;
+    document.getElementById("dailyReport").innerHTML = html;
   });
 }
 
-// ================= STATION REPORT =================
-function loadStationReport() {
+// ================= VIEW DAY DETAILS =================
+function viewDay(date) {
 
   db.all("SELECT * FROM sessions", (e, rows) => {
 
-    const map = {};
+    let filtered = rows.filter(r =>
+      new Date(r.start_time).toISOString().split("T")[0] === date
+    );
 
-    rows.forEach(r => {
+    let total = 0;
+    let html = `<h3>📅 ${date} Breakdown</h3>`;
 
-      if (!map[r.station]) {
-        map[r.station] = { total: 0, count: 0 };
-      }
-
-      map[r.station].total += Number(r.amount || 0);
-      map[r.station].count++;
-    });
-
-    let html = "";
-
-    Object.keys(map).forEach(station => {
+    filtered.forEach(r => {
+      total += Number(r.amount || 0);
 
       html += `
-        <div style="padding:10px;margin:5px;background:#1e1e1e;color:white;border-radius:6px;">
-          <b>🎮 ${station}</b><br>
-          📊 Sessions: ${map[station].count}<br>
-          💰 Total: ₦${map[station].total}
+        <div style="padding:5px;border-bottom:1px solid #444;">
+          🎮 ${r.station} | ₦${r.amount} | ${r.status}
         </div>
       `;
     });
 
-    const el = document.getElementById("stationReport");
-    if (el) el.innerHTML = html;
+    html += `<h3>💰 TOTAL: ₦${total}</h3>`;
+
+    document.getElementById("dailyReport").innerHTML = html;
   });
 }
 
 // ================= RATE =================
 function setRate() {
-  const rate = Number(document.getElementById("rate").value);
-  const rateType = Number(document.getElementById("rateType").value);
-
-  if (!rate || !rateType) {
-    showMsg("❌ Enter valid rate");
-    return;
-  }
+  const rate = document.getElementById("rate").value;
 
   db.run(
     "UPDATE settings SET value=? WHERE key='rate_per_10min'",
-    [JSON.stringify({ rate, rateType })],
-    (err) => {
-      if (err) return showMsg("❌ Failed to set rate");
-
-      showMsg(`✅ Rate set: ₦${rate} per ${rateType} minutes`);
-    }
+    [rate]
   );
-}
-
-// ================= DAILY TOGGLE (FROM HTML BUTTON) =================
-function toggleDailyReportPanel() {
-
-  const panel = document.getElementById("dailyReportPanel");
-
-  if (!panel) return;
-
-  panel.style.display =
-    panel.style.display === "none" ? "block" : "none";
-
-  if (panel.style.display === "block") {
-    loadDailyReport();
-  }
-}
-function toggleStationReportPanel() {
-
-  const panel = document.getElementById("stationReportPanel");
-
-  if (!panel) return;
-
-  panel.style.display =
-    panel.style.display === "none" ? "block" : "none";
-
-  if (panel.style.display === "block") {
-    loadStationReport();
-  }
-}
-function showMsg(text) {
-  const box = document.getElementById("msgBox");
-  if (!box) return;
-
-  box.innerText = text;
-
-  setTimeout(() => {
-    box.innerText = "";
-  }, 3000);
 }

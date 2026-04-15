@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
   <title>Game Center LIVE POS</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -9,24 +10,25 @@
 
 <h1>🎮 GAME CENTER LIVE POS</h1>
 
+<!-- ================= ADMIN PANEL ================= -->
 <div>
   <h3>Admin Panel</h3>
 
-<div class="rate-box">
+  <div class="rate-box">
 
-  <input id="rate" type="number" placeholder="Enter rate (₦)" />
+    <input id="rate" type="number" placeholder="Enter rate (₦)" />
 
-  <select id="rateType">
-    <option value="1">Per 1 min</option>
-    <option value="7">Per 7 min</option>
-    <option value="10" selected>Per 10 min</option>
-    <option value="20">Per 20 min</option>
-  </select>
+    <select id="rateType">
+      <option value="1">Per 1 min</option>
+      <option value="7">Per 7 min</option>
+      <option value="10" selected>Per 10 min</option>
+      <option value="20">Per 20 min</option>
+    </select>
 
-  <button onclick="setRate()">💾 Set rate</button>
-  <div id="msgBox" style="margin-top:10px;color:lime;font-weight:bold;"></div>
+    <button onclick="setRate()">💾 Set rate</button>
 
-</div>
+    <div id="msgBox" style="margin-top:10px;color:lime;font-weight:bold;"></div>
+  </div>
 
   <button onclick="toggleDailyReportPanel()">📅 Daily Report</button>
 
@@ -34,24 +36,27 @@
     <div id="dailyReport"></div>
   </div>
 
-<button onclick="toggleStationReportPanel()">🎮 Today's Report</button>
+  <button onclick="toggleStationReportPanel()">🎮 Station Report</button>
 
-<div id="stationReportPanel" style="display:none; margin-top:10px;">
-  <div id="stationReport"></div>
+  <div id="stationReportPanel" style="display:none; margin-top:10px;">
+    <div id="stationReport"></div>
+  </div>
 </div>
-</div>
+
 <hr>
 
-<input id="station" placeholder="Station">
-<input id="duration" placeholder="Minutes">
-<button onclick="startSession()">Start</button>
+<!-- ================= SESSION INPUT ================= -->
+<input id="station" placeholder="Station (e.g PC1)">
+<input id="duration" type="number" placeholder="Minutes">
+
+<button onclick="startSession()">Start Session</button>
 
 <h3 id="income">Income: ₦0</h3>
 
-
 <hr>
 
-<table border="1">
+<!-- ================= TABLE ================= -->
+<table border="1" width="100%">
   <thead>
     <tr>
       <th>Receipt</th>
@@ -68,6 +73,8 @@
   <tbody id="sessions"></tbody>
 </table>
 
+<!-- ================= RENDERER ================= -->
 <script src="renderer.js"></script>
+
 </body>
 </html>
