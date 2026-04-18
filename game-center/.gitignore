@@ -1,13 +1,23 @@
+# Node modules
 node_modules/
-<<<<<<< HEAD
-gamecenter.db
+
+# Database / backups
+*.db
 backup.json
-*.log
+
+# Electron build output
 dist/
-=======
-release/
-dist/
-*.exe
-*.asar
-*.dll
->>>>>>> 5ba73347045d449102872e9325a2d3aedb8f01e8
+out/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
