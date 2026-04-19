@@ -6,70 +6,115 @@
   <title>Game Center LIVE POS</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h1>🎮 GAME CENTER LIVE POS</h1>
+  <!-- ─── Header ─────────────────────────────── -->
+  <header id="appHeader">
+    <h1>GAME CENTER LIVE POS</h1>
+    <span id="clockDisplay">--:--:--</span>
+  </header>
 
-<div>
-  <h3>Admin Panel</h3>
+  <!-- ─── Top Controls Row ───────────────────── -->
+  <section class="control-row">
+    <!-- Rate Setting -->
+    <div class="control-card">
+      <h3>Rate Config</h3>
+      <div class="input-group">
+        <input id="rate" type="number" placeholder="Rate (₦)" min="0" step="1">
+        <select id="rateType">
+          <option value="1">Per 1 min</option>
+          <option value="7">Per 7 min</option>
+          <option value="10" selected>Per 10 min</option>
+          <option value="20">Per 20 min</option>
+          <option value="30">Per 30 min</option>
+          <option value="60">Per 1 hr</option>
+        </select>
+        <button class="btn btn-primary" onclick="setRate()">Set Rate</button>
+      </div>
+      <p id="currentRateLabel" class="hint-text">No rate configured</p>
+    </div>
 
-<div class="rate-box">
+    <!-- Start Session -->
+    <div class="control-card">
+      <h3>Start Session</h3>
+      <div class="input-group">
+        <input id="station" placeholder="Station (e.g. PS5-1)">
+        <input id="customer" placeholder="Customer name">
+        <input id="duration" type="number" placeholder="Minutes" min="1" step="1">
+        <button class="btn btn-green" onclick="startSession()">Start</button>
+      </div>
+    </div>
 
-  <input id="rate" type="number" placeholder="Enter rate (₦)" />
+    <!-- Manual Sales -->
+    <div class="control-card">
+      <h3>Manual Sale</h3>
+      <div class="input-group">
+        <input id="itemName" placeholder="Item (e.g. Soccer)">
+        <input id="itemPrice" type="number" placeholder="₦" min="0" step="1">
+        <input id="manualCustomer" placeholder="Customer name">
+        <input id="itemQty" type="number" value="1" min="1" style="max-width:60px">
+        <button class="btn btn-orange" onclick="addManualSale()">Add</button>
+      </div>
+      <h4 id="manualTotal" class="total-label">Total: ₦0</h4>
+      <div id="manualList" class="manual-list"></div>
+    </div>
+  </section>
 
-  <label for="rateType">Rate Type:</label>
-  <select id="rateType">
-    <option value="1">Per 1 min</option>
-    <option value="7">Per 7 min</option>
-    <option value="10" selected>Per 10 min</option>
-    <option value="20">Per 20 min</option>
-  </select>
+  <!-- ─── Report Buttons ─────────────────────── -->
+  <section class="report-bar">
+    <button class="btn btn-outline" onclick="toggleDailyReportPanel()">Daily Revenue Report</button>
+    <button class="btn btn-outline" onclick="toggleStationReportPanel()">Station Usage Report</button>
+  </section>
+  <div id="dailyReportPanel" class="report-panel" style="display:none;"></div>
+  <div id="stationReportPanel" class="report-panel" style="display:none;"></div>
 
-  <button onclick="setRate()">💾 Set rate</button>
-  <div id="msgBox"></div>
+  <!-- ─── LIVE COUNTDOWN GRID ────────────────── -->
+  <section class="active-grid-section">
+    <h3>Active Stations</h3>
+    <div id="activeGrid" class="active-grid">
+      <p id="noActiveMsg" class="hint-text grid-empty-msg">No active sessions. Start one above.</p>
+    </div>
+  </section>
 
+  <!-- ─── Completed Sessions Table ───────────── -->
+  <section class="table-section">
+    <h3>Completed Sessions & History</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Receipt</th>
+            <th>Station</th>
+            <th>Customer</th>
+            <th>Duration</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="sessions"></tbody>
+      </table>
+    </div>
+    <p id="noSessionsMsg" class="hint-text" style="display:none;">No completed sessions yet.</p>
+  </section>
+
+  <!-- ─── Toast Container ────────────────────── -->
+  <div id="toastContainer"></div>
+<div style="margin-top:20px;">
+  <button onclick="test()">TEST API</button>
 </div>
 
-<button onclick="toggleDailyReportPanel()">📅 Daily Report</button>
-<div id="dailyReportPanel" class="hidden-panel"></div>
+<script>
+function test() {
+  if (!window.api) {
+    alert("API NOT LOADED (preload issue)");
+    return;
+  }
 
-<button onclick="toggleStationReportPanel()">🎮 Today's Report</button>
-
-<div id="stationReportPanel" class="hidden-panel">
-  <div id="stationReport"></div>
-</div>
-</div>
-<hr>
-
-<input id="station" placeholder="Station">
-<input id="duration" placeholder="Minutes">
-<button onclick="startSession()">Start</button>
-
-<h3 id="income">Income: ₦0</h3>
-
-
-<hr>
-
-<table border="1">
-  <thead>
-    <tr>
-      <th>Receipt</th>
-      <th>Station</th>
-      <th>Start</th>
-      <th>End</th>
-      <th>Date</th>
-      <th>Status</th>
-      <th>Countdown</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-
-<tbody id="sessions"></tbody>
-</table>
-
-<!-- ================= RENDERER ================= -->
-<script src="renderer.js"></script>
+  window.api.ping().then(res => alert(res));
+}
+</script>
+  <script src="renderer.js"></script>
 
 </body>
 </html>
