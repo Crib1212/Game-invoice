@@ -1,85 +1,133 @@
-let sessions = [];
+// ================= STATE =================
+let liveSessions = {};
+let currentRate = 100;
+let rateType = 10;
 
-/* ================= START SESSION ================= */
-async function startSession() {
+// ================= RATE =================
+function setRate() {
+  const rate = parseInt(document.getElementById("rate").value);
+  const type = parseInt(document.getElementById("rateType").value);
+
+  currentRate = rate;
+  rateType = type;
+
+  document.getElementById("currentRateLabel").innerText =
+    `₦${rate} per ${type} min`;
+}
+
+// ================= START =================
+function startSession() {
   const station = document.getElementById("station").value;
-  const customer = document.getElementById("customer").value || "Walk-in";
-  const duration = parseInt(document.getElementById("duration").value);
+  const customer = document.getElementById("customer").value;
 
-  const now = Date.now();
+  if (!station || !customer) return;
 
-  const session = {
-    id: now,
-    receipt: "R-" + now,
+  liveSessions[station] = {
     station,
     customer,
-    duration,
-    startTime: now,
-    endTime: now + duration * 60000,
-    total: duration * 10
+    startTime: Date.now(),
+    pauseTime: 0,
+    paused: false,
+    pauseStart: null
+  };
+}
+
+// ================= PAUSE =================
+function pauseSession(station) {
+  const s = liveSessions[station];
+  if (!s || s.paused) return;
+
+  s.paused = true;
+  s.pauseStart = Date.now();
+}
+
+// ================= RESUME =================
+function resumeSession(station) {
+  const s = liveSessions[station];
+  if (!s || !s.paused) return;
+
+  s.pauseTime += Date.now() - s.pauseStart;
+  s.paused = false;
+}
+
+// ================= TIME =================
+function getSeconds(s) {
+  const now = s.paused ? s.pauseStart : Date.now();
+
+  return Math.floor((now - s.startTime - s.pauseTime) / 1000);
+}
+
+// ================= BILL =================
+function getBill(s) {
+  const mins = Math.ceil(getSeconds(s) / 60);
+  return Math.ceil((mins / rateType) * currentRate);
+}
+
+// ================= CLOSE + SAVE RECEIPT =================
+async function closeSession(station) {
+  const s = liveSessions[station];
+
+  const data = {
+    station: s.station,
+    customer: s.customer,
+    startTime: s.startTime,
+    endTime: Date.now(),
+    duration: Math.ceil(getSeconds(s) / 60),
+    total: getBill(s)
   };
 
-  await window.api.startSession(session);
-  load();
+  const res = await window.api.saveSession(data);
+
+  alert("Receipt: " + res.receiptNo);
+
+  delete liveSessions[station];
 }
 
-/* ================= ADD SALE ================= */
-async function addSale() {
-  const customer = document.getElementById("manualCustomer").value || "Walk-in";
-  const item = document.getElementById("item").value;
-  const price = parseFloat(document.getElementById("price").value);
-  const qty = parseInt(document.getElementById("qty").value);
+// ================= LIVE UI =================
+function renderLive() {
+  const grid = document.getElementById("activeGrid");
+  grid.innerHTML = "";
 
-  await window.api.addSale({
-    id: Date.now(),
-    customer,
-    item,
-    price,
-    qty,
-    total: price * qty,
-    time: Date.now()
+  Object.keys(liveSessions).forEach((k) => {
+    const s = liveSessions[k];
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+      <h3>${s.station}</h3>
+      <p>${s.customer}</p>
+      <p>${Math.ceil(getSeconds(s)/60)} min</p>
+      <p>₦${getBill(s)}</p>
+
+      <button onclick="pauseSession('${k}')">Pause</button>
+      <button onclick="resumeSession('${k}')">Resume</button>
+      <button onclick="closeSession('${k}')">Close</button>
+    `;
+
+    grid.appendChild(div);
   });
-
-  load();
 }
 
-/* ================= LOAD ================= */
-async function load() {
-  const now = Date.now();
+// ================= RECEIPTS =================
+async function loadReceipts() {
+  const data = await window.api.getReceipts();
 
-  sessions = await window.api.getSessions();
+  const panel = document.getElementById("receiptPanel");
+  panel.innerHTML = "<h3>Receipts</h3>";
 
-  const live = sessions.filter(s => s.status === "active");
-  const sales = await window.api.getSales();
-
-  /* LIVE SESSIONS */
-  document.getElementById("live").innerHTML = live.map(s => {
-    const diff = s.endTime - now;
-
-    if (diff <= 0) {
-      window.api.endSession(s.id);
-    }
-
-    const m = Math.max(0, Math.floor(diff / 60000));
-    const sec = Math.max(0, Math.floor((diff % 60000) / 1000));
-
-    return `
+  data.forEach(r => {
+    panel.innerHTML += `
       <div>
-        ${s.station} | ${s.customer} | ${m}:${sec}
-      </div>
+        <b>${r.receiptNo}</b><br>
+        ${r.station} - ${r.customer}<br>
+        ₦${r.total}<br>
+        ${new Date(r.createdAt).toLocaleString()}
+      </div><hr>
     `;
-  }).join("");
-
-  /* SALES */
-  document.getElementById("sales").innerHTML = sales.map(s => {
-    return `
-      <div>
-        ${s.customer} - ${s.item} x${s.qty} = ₦${s.total}
-      </div>
-    `;
-  }).join("");
+  });
 }
 
-/* LIVE LOOP */
-setInterval(load, 1000);
-load();
+// ================= LOOP =================
+setInterval(() => {
+  renderLive();
+}, 1000);

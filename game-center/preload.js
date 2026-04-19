@@ -1,10 +1,9 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("api", {
-  startSession: (d) => ipcRenderer.invoke("start-session", d),
-  endSession: (id) => ipcRenderer.invoke("end-session", id),
+  saveSession: (data) => ipcRenderer.invoke("save-session", data),
   getSessions: () => ipcRenderer.invoke("get-sessions"),
-
-  addSale: (d) => ipcRenderer.invoke("add-sale", d),
+  getReceipts: () => ipcRenderer.invoke("get-receipts"),
+  saveSale: (data) => ipcRenderer.invoke("save-sale", data),
   getSales: () => ipcRenderer.invoke("get-sales")
 });

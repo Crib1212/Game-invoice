@@ -2,13 +2,16 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const db = require("./db");
 
+let win;
+
 function createWindow() {
-  const win = new BrowserWindow({
-    width: 1200,
+  win = new BrowserWindow({
+    width: 1300,
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true
+      contextIsolation: true,
+      nodeIntegration: false
     }
   });
 
@@ -17,11 +20,9 @@ function createWindow() {
 
 app.whenReady().then(createWindow);
 
-/* ================= SESSION ================= */
-ipcMain.handle("start-session", (_, data) => db.startSession(data));
-ipcMain.handle("end-session", (_, id) => db.endSession(id));
+// ================= IPC =================
+ipcMain.handle("save-session", (_, data) => db.saveSessionWithReceipt(data));
 ipcMain.handle("get-sessions", () => db.getSessions());
-
-/* ================= SALES ================= */
-ipcMain.handle("add-sale", (_, data) => db.addSale(data));
+ipcMain.handle("get-receipts", () => db.getReceipts());
+ipcMain.handle("save-sale", (_, data) => db.saveSale(data));
 ipcMain.handle("get-sales", () => db.getSales());

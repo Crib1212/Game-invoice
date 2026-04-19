@@ -1,93 +1,144 @@
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("db.sqlite");
+const path = require("path");
 
-/* ================= TABLES ================= */
+const db = new sqlite3.Database(
+  path.join(__dirname, "gamecenter.db")
+);
+
+// ================= TABLES =================
 db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS sessions (
-    id INTEGER PRIMARY KEY,
-    receipt TEXT,
-    station TEXT,
-    customer TEXT,
-    duration INTEGER,
-    startTime INTEGER,
-    endTime INTEGER,
-    status TEXT,
-    total REAL
-  )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS sales (
-    id INTEGER PRIMARY KEY,
-    customer TEXT,
-    item TEXT,
-    price REAL,
-    qty INTEGER,
-    total REAL,
-    time INTEGER
-  )`);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      station TEXT,
+      customer TEXT,
+      startTime INTEGER,
+      endTime INTEGER,
+      duration INTEGER,
+      total INTEGER
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      receiptNo TEXT,
+      station TEXT,
+      customer TEXT,
+      startTime INTEGER,
+      endTime INTEGER,
+      duration INTEGER,
+      total INTEGER,
+      createdAt INTEGER
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item TEXT,
+      price INTEGER,
+      qty INTEGER,
+      customer TEXT,
+      total INTEGER,
+      time INTEGER
+    )
+  `);
 });
 
-/* ================= SESSIONS ================= */
-exports.startSession = (s) => {
-  return new Promise((resolve) => {
+// ================= SESSION + RECEIPT =================
+function saveSessionWithReceipt(data) {
+  return new Promise((resolve, reject) => {
+    const receiptNo = "RC-" + Date.now();
+
     db.run(
-      `INSERT INTO sessions VALUES (?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO sessions (station, customer, startTime, endTime, duration, total)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
-        s.id,
-        s.receipt,
-        s.station,
-        s.customer,
-        s.duration,
-        s.startTime,
-        s.endTime,
-        "active",
-        s.total
+        data.station,
+        data.customer,
+        data.startTime,
+        data.endTime,
+        data.duration,
+        data.total
       ],
-      () => resolve({ ok: true })
+      function (err) {
+        if (err) return reject(err);
+
+        db.run(
+          `INSERT INTO receipts
+           (receiptNo, station, customer, startTime, endTime, duration, total, createdAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            receiptNo,
+            data.station,
+            data.customer,
+            data.startTime,
+            data.endTime,
+            data.duration,
+            data.total,
+            Date.now()
+          ],
+          function (err2) {
+            if (err2) reject(err2);
+            else resolve({ receiptNo });
+          }
+        );
+      }
     );
   });
-};
+}
 
-exports.endSession = (id) => {
-  return new Promise((resolve) => {
-    db.run(
-      `UPDATE sessions SET status='completed' WHERE id=?`,
-      [id],
-      () => resolve({ ok: true })
+// ================= GET DATA =================
+function getSessions() {
+  return new Promise((res, rej) => {
+    db.all(`SELECT * FROM sessions ORDER BY id DESC`, [], (e, r) =>
+      e ? rej(e) : res(r)
     );
   });
-};
+}
 
-exports.getSessions = () => {
-  return new Promise((resolve) => {
-    db.all(`SELECT * FROM sessions ORDER BY startTime DESC`, (err, rows) => {
-      resolve(rows);
-    });
+function getReceipts() {
+  return new Promise((res, rej) => {
+    db.all(`SELECT * FROM receipts ORDER BY id DESC`, [], (e, r) =>
+      e ? rej(e) : res(r)
+    );
   });
-};
+}
 
-/* ================= SALES ================= */
-exports.addSale = (s) => {
-  return new Promise((resolve) => {
+function saveSale(data) {
+  return new Promise((res, rej) => {
     db.run(
-      `INSERT INTO sales VALUES (?,?,?,?,?,?,?)`,
+      `INSERT INTO sales (item, price, qty, customer, total, time)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
-        s.id,
-        s.customer,
-        s.item,
-        s.price,
-        s.qty,
-        s.total,
-        s.time
+        data.item,
+        data.price,
+        data.qty,
+        data.customer,
+        data.total,
+        data.time
       ],
-      () => resolve({ ok: true })
+      function (e) {
+        e ? rej(e) : res(this.lastID);
+      }
     );
   });
-};
+}
 
-exports.getSales = () => {
-  return new Promise((resolve) => {
-    db.all(`SELECT * FROM sales ORDER BY time DESC`, (err, rows) => {
-      resolve(rows);
-    });
+function getSales() {
+  return new Promise((res, rej) => {
+    db.all(`SELECT * FROM sales ORDER BY id DESC`, [], (e, r) =>
+      e ? rej(e) : res(r)
+    );
   });
+}
+
+module.exports = {
+  saveSessionWithReceipt,
+  getSessions,
+  getReceipts,
+  saveSale,
+  getSales
 };
