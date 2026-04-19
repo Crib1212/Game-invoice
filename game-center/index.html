@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Game Center LIVE POS</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -17,6 +18,7 @@
 
   <input id="rate" type="number" placeholder="Enter rate (₦)" />
 
+  <label for="rateType">Rate Type:</label>
   <select id="rateType">
     <option value="1">Per 1 min</option>
     <option value="7">Per 7 min</option>
@@ -25,16 +27,16 @@
   </select>
 
   <button onclick="setRate()">💾 Set rate</button>
-  <div id="msgBox" style="margin-top:10px;color:lime;font-weight:bold;"></div>
+  <div id="msgBox"></div>
 
 </div>
 
 <button onclick="toggleDailyReportPanel()">📅 Daily Report</button>
-<div id="dailyReportPanel" style="display:none;"></div>
+<div id="dailyReportPanel" class="hidden-panel"></div>
 
 <button onclick="toggleStationReportPanel()">🎮 Today's Report</button>
 
-<div id="stationReportPanel" style="display:none; margin-top:10px;">
+<div id="stationReportPanel" class="hidden-panel">
   <div id="stationReport"></div>
 </div>
 </div>
