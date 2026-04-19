@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
   <title>Game Center LIVE POS</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -9,65 +10,64 @@
 
 <h1>🎮 GAME CENTER LIVE POS</h1>
 
-<!-- ADMIN -->
-<h3>Admin Panel</h3>
+<div>
+  <h3>Admin Panel</h3>
 
-<input id="rate" type="number" placeholder="Enter rate (₦)">
-<select id="rateType">
-  <option value="1">Per 1 min</option>
-  <option value="7">Per 7 min</option>
-  <option value="10" selected>Per 10 min</option>
-  <option value="20">Per 20 min</option>
-</select>
-<button onclick="setRate()">Set Rate</button>
+<div class="rate-box">
 
-<hr>
+  <input id="rate" type="number" placeholder="Enter rate (₦)" />
+
+  <select id="rateType">
+    <option value="1">Per 1 min</option>
+    <option value="7">Per 7 min</option>
+    <option value="10" selected>Per 10 min</option>
+    <option value="20">Per 20 min</option>
+  </select>
+
+  <button onclick="setRate()">💾 Set rate</button>
+  <div id="msgBox" style="margin-top:10px;color:lime;font-weight:bold;"></div>
+
+</div>
 
 <button onclick="toggleDailyReportPanel()">📅 Daily Report</button>
 <div id="dailyReportPanel" style="display:none;"></div>
 
 <button onclick="toggleStationReportPanel()">🎮 Today's Report</button>
-<div id="stationReportPanel" style="display:none;"></div>
 
+<div id="stationReportPanel" style="display:none; margin-top:10px;">
+  <div id="stationReport"></div>
+</div>
+</div>
 <hr>
 
-<!-- SESSION -->
-<h3>Start Session</h3>
 <input id="station" placeholder="Station">
-<input id="customer" placeholder="Customer">
-<input id="duration" type="number" placeholder="Minutes">
+<input id="duration" placeholder="Minutes">
 <button onclick="startSession()">Start</button>
 
-<hr>
+<h3 id="income">Income: ₦0</h3>
 
-<!-- MANUAL -->
-<h3>Manual Sales</h3>
-<input id="itemName" placeholder="Game (Soccer)">
-<input id="itemPrice" type="number" placeholder="₦">
-<input id="itemQty" type="number" value="1">
-<button onclick="addManualSale()">Add</button>
-
-<h4 id="manualTotal">Total: ₦0</h4>
-<div id="manualList"></div>
 
 <hr>
 
 <table border="1">
-<thead>
-<tr>
-<th>Receipt</th>
-<th>Station</th>
-<th>Start</th>
-<th>End</th>
-<th>Status</th>
-<th>Countdown</th>
-<th>Action</th>
-</tr>
-</thead>
+  <thead>
+    <tr>
+      <th>Receipt</th>
+      <th>Station</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Date</th>
+      <th>Status</th>
+      <th>Countdown</th>
+      <th>Action</th>
+    </tr>
+  </thead>
 
 <tbody id="sessions"></tbody>
 </table>
 
+<!-- ================= RENDERER ================= -->
 <script src="renderer.js"></script>
+
 </body>
 </html>
