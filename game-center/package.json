@@ -1,15 +1,32 @@
 {
-  "name": "game-pos",
+  "name": "witty-games",
   "version": "1.0.0",
+  "description": "Game Center POS System",
   "main": "main.js",
+  "author": "Witty Games",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
   },
-  "devDependencies": {
-    "electron": "^20.0.0",
-    "electron-rebuild": "^3.2.9"
+  "build": {
+    "appId": "com.witty.games",
+    "productName": "Witty Styzes & Games",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
   },
   "dependencies": {
     "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "electron": "20.0.0",
+    "electron-builder": "^26.8.1"
   }
 }
