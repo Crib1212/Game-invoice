@@ -1,133 +1,211 @@
-// ================= STATE =================
-let liveSessions = {};
-let currentRate = 100;
-let rateType = 10;
+const { ipcRenderer } = require("electron");
 
-// ================= RATE =================
-function setRate() {
-  const rate = parseInt(document.getElementById("rate").value);
-  const type = parseInt(document.getElementById("rateType").value);
+let sessions = [];
+let purchases = [];
 
-  currentRate = rate;
-  rateType = type;
-
-  document.getElementById("currentRateLabel").innerText =
-    `₦${rate} per ${type} min`;
-}
-
-// ================= START =================
+// ================= SESSION =================
 function startSession() {
+
   const station = document.getElementById("station").value;
-  const customer = document.getElementById("customer").value;
+  const pricePerGame = Number(document.getElementById("pricePerGame").value);
+  const gameMinutes = Number(document.getElementById("gameMinutes").value);
+  const customerMinutes = Number(document.getElementById("customerMinutes").value);
 
-  if (!station || !customer) return;
+  if (!station || !pricePerGame || !gameMinutes || !customerMinutes) {
+    alert("Fill all session fields");
+    return;
+  }
 
-  liveSessions[station] = {
+  const start = Date.now();
+  const end = start + customerMinutes * 60000;
+  const amount = (customerMinutes / gameMinutes) * pricePerGame;
+
+  ipcRenderer.send("save-session", {
     station,
+    startTime: start,
+    endTime: end,
+    customerMinutes,
+    pricePerGame,
+    gameMinutes,
+    amount,
+    date: new Date().toLocaleDateString()
+  });
+
+  document.getElementById("station").value = "";
+  document.getElementById("customerMinutes").value = "";
+}
+
+// ================= PURCHASE =================
+function addPurchase() {
+
+  const customer = document.getElementById("customerName").value;
+  const item = document.getElementById("itemName").value;
+  const price = Number(document.getElementById("purchasePrice").value);
+  const qty = Number(document.getElementById("qty").value);
+
+  if (!customer || !item || !price || !qty) {
+    alert("Fill all purchase fields");
+    return;
+  }
+
+  ipcRenderer.send("save-purchase", {
     customer,
-    startTime: Date.now(),
-    pauseTime: 0,
-    paused: false,
-    pauseStart: null
-  };
-}
-
-// ================= PAUSE =================
-function pauseSession(station) {
-  const s = liveSessions[station];
-  if (!s || s.paused) return;
-
-  s.paused = true;
-  s.pauseStart = Date.now();
-}
-
-// ================= RESUME =================
-function resumeSession(station) {
-  const s = liveSessions[station];
-  if (!s || !s.paused) return;
-
-  s.pauseTime += Date.now() - s.pauseStart;
-  s.paused = false;
-}
-
-// ================= TIME =================
-function getSeconds(s) {
-  const now = s.paused ? s.pauseStart : Date.now();
-
-  return Math.floor((now - s.startTime - s.pauseTime) / 1000);
-}
-
-// ================= BILL =================
-function getBill(s) {
-  const mins = Math.ceil(getSeconds(s) / 60);
-  return Math.ceil((mins / rateType) * currentRate);
-}
-
-// ================= CLOSE + SAVE RECEIPT =================
-async function closeSession(station) {
-  const s = liveSessions[station];
-
-  const data = {
-    station: s.station,
-    customer: s.customer,
-    startTime: s.startTime,
-    endTime: Date.now(),
-    duration: Math.ceil(getSeconds(s) / 60),
-    total: getBill(s)
-  };
-
-  const res = await window.api.saveSession(data);
-
-  alert("Receipt: " + res.receiptNo);
-
-  delete liveSessions[station];
-}
-
-// ================= LIVE UI =================
-function renderLive() {
-  const grid = document.getElementById("activeGrid");
-  grid.innerHTML = "";
-
-  Object.keys(liveSessions).forEach((k) => {
-    const s = liveSessions[k];
-
-    const div = document.createElement("div");
-
-    div.innerHTML = `
-      <h3>${s.station}</h3>
-      <p>${s.customer}</p>
-      <p>${Math.ceil(getSeconds(s)/60)} min</p>
-      <p>₦${getBill(s)}</p>
-
-      <button onclick="pauseSession('${k}')">Pause</button>
-      <button onclick="resumeSession('${k}')">Resume</button>
-      <button onclick="closeSession('${k}')">Close</button>
-    `;
-
-    grid.appendChild(div);
+    item,
+    price,
+    qty,
+    total: price * qty,
+    date: new Date().toLocaleDateString()
   });
+
+  document.getElementById("customerName").value = "";
+  document.getElementById("itemName").value = "";
+  document.getElementById("purchasePrice").value = "";
 }
 
-// ================= RECEIPTS =================
-async function loadReceipts() {
-  const data = await window.api.getReceipts();
+// ================= LOAD =================
+function load() {
+  ipcRenderer.send("get-data");
+}
 
-  const panel = document.getElementById("receiptPanel");
-  panel.innerHTML = "<h3>Receipts</h3>";
+ipcRenderer.on("saved", () => {
+  load();
+});
 
-  data.forEach(r => {
-    panel.innerHTML += `
-      <div>
-        <b>${r.receiptNo}</b><br>
-        ${r.station} - ${r.customer}<br>
-        ₦${r.total}<br>
-        ${new Date(r.createdAt).toLocaleString()}
-      </div><hr>
+ipcRenderer.on("data", (e, data) => {
+  sessions = data.sessions;
+  purchases = data.purchases;
+  render();
+});
+
+// ================= HELPERS =================
+function formatTime(t) {
+  return new Date(t).toLocaleTimeString();
+}
+
+function countdown(end) {
+  const diff = end - Date.now();
+  if (diff <= 0) return "EXPIRED";
+  return Math.floor(diff / 60000) + "m " + Math.floor((diff % 60000) / 1000) + "s";
+}
+
+// ================= RENDER =================
+function render() {
+
+  const table = document.getElementById("table");
+  table.innerHTML = "";
+
+  let sessionTotal = 0;
+  let purchaseTotal = 0;
+
+  const combined = [];
+
+  sessions.forEach(s => {
+    combined.push({
+      type: "SESSION",
+      invoice: s.invoice,
+      name: s.station,
+      start: s.startTime,
+      end: s.endTime,
+      date: s.date,
+      amount: s.amount
+    });
+    sessionTotal += s.amount;
+  });
+
+  purchases.forEach(p => {
+    combined.push({
+      type: "PURCHASE",
+      invoice: p.invoice,
+      name: p.customer,
+      start: p.startTime,
+      end: null,
+      date: p.date,
+      amount: p.total
+    });
+    purchaseTotal += p.total;
+  });
+
+  combined.sort((a, b) => a.invoice - b.invoice);
+
+  combined.forEach(item => {
+
+    let status = "-";
+    let cd = "-";
+    let end = "-";
+
+    if (item.type === "SESSION") {
+      cd = countdown(item.end);
+      status = cd === "EXPIRED" ? "Expired" : "Active";
+      end = formatTime(item.end);
+    } else {
+      status = "Completed";
+    }
+
+    table.innerHTML += `
+      <tr>
+        <td>${item.invoice}</td>
+        <td>${item.type}</td>
+        <td>${item.name}</td>
+        <td>${formatTime(item.start)}</td>
+        <td>${end}</td>
+        <td>${item.date}</td>
+        <td>${status}</td>
+        <td>${cd}</td>
+        <td>₦${item.amount}</td>
+      </tr>
     `;
   });
+
+  const grand = sessionTotal + purchaseTotal;
+
+  document.getElementById("income").innerText = "Income: ₦" + grand;
+
+  updateSummary(sessionTotal, purchaseTotal, grand);
 }
 
-// ================= LOOP =================
-setInterval(() => {
-  renderLive();
-}, 1000);
+// ================= SUMMARY =================
+function toggleSummary() {
+  const p = document.getElementById("summaryPanel");
+  p.style.display = p.style.display === "none" ? "block" : "none";
+}
+
+function updateSummary(s, p, g) {
+  document.getElementById("summaryPanel").innerHTML = `
+    <h3>📊 Summary</h3>
+    <p>Session Total: ₦${s}</p>
+    <p>Purchase Total: ₦${p}</p>
+    <hr>
+    <h3 style="color:#00ff88;">Grand Total: ₦${g}</h3>
+  `;
+}
+
+// ================= REPORT =================
+function toggleReport() {
+
+  const p = document.getElementById("reportPanel");
+  p.style.display = p.style.display === "none" ? "block" : "none";
+
+  let combined = [];
+
+  sessions.forEach(s => {
+    combined.push({ invoice: s.invoice, type: "SESSION", amount: s.amount, date: s.date });
+  });
+
+  purchases.forEach(pu => {
+    combined.push({ invoice: pu.invoice, type: "PURCHASE", amount: pu.total, date: pu.date });
+  });
+
+  combined.sort((a, b) => a.invoice - b.invoice);
+
+  let html = "<h3>📄 Invoice Report</h3>";
+
+  combined.forEach(i => {
+    html += `<p>${i.invoice} | ${i.type} | ₦${i.amount} | ${i.date}</p>`;
+  });
+
+  p.innerHTML = html;
+}
+
+// ================= LIVE =================
+setInterval(render, 1000);
+load();

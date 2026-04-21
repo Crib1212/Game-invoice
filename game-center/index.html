@@ -1,123 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Game Center LIVE POS</title>
+  <title>Game Center POS</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <!-- ─── Header ─────────────────────────────── -->
-  <header id="appHeader">
-    <h1>GAME CENTER LIVE POS</h1>
-    <span id="clockDisplay">--:--:--</span>
-  </header>
+<h1>🎮 GAME CENTER POS</h1>
 
-  <!-- ─── Top Controls Row ───────────────────── -->
-  <section class="control-row">
-    <!-- Rate Setting -->
-    <div class="control-card">
-      <h3>Rate Config</h3>
-      <div class="input-group">
-        <input id="rate" type="number" placeholder="Rate (₦)" min="0" step="1">
-        <select id="rateType">
-          <option value="1">Per 1 min</option>
-          <option value="7">Per 7 min</option>
-          <option value="10" selected>Per 10 min</option>
-          <option value="20">Per 20 min</option>
-          <option value="30">Per 30 min</option>
-          <option value="60">Per 1 hr</option>
-        </select>
-        <button class="btn btn-primary" onclick="setRate()">Set Rate</button>
-      </div>
-      <p id="currentRateLabel" class="hint-text">No rate configured</p>
-    </div>
+<h3>Game Session</h3>
 
-    <!-- Start Session -->
-    <div class="control-card">
-      <h3>Start Session</h3>
-      <div class="input-group">
-        <input id="station" placeholder="Station (e.g. PS5-1)">
-        <input id="customer" placeholder="Customer name">
-        <input id="duration" type="number" placeholder="Minutes" min="1" step="1">
-        <button class="btn btn-green" onclick="startSession()">Start</button>
-      </div>
-    </div>
+<input id="station" placeholder="Station">
+<input id="pricePerGame" type="number" placeholder="Price per Game (₦)">
+<input id="gameMinutes" type="number" placeholder="Game Minutes">
+<input id="customerMinutes" type="number" placeholder="Customer Minutes">
 
-    <!-- Manual Sales -->
-    <div class="control-card">
-      <h3>Manual Sale</h3>
-      <div class="input-group">
-        <input id="itemName" placeholder="Item (e.g. Soccer)">
-        <input id="itemPrice" type="number" placeholder="₦" min="0" step="1">
-        <input id="manualCustomer" placeholder="Customer name">
-        <input id="itemQty" type="number" value="1" min="1" style="max-width:60px">
-        <button class="btn btn-orange" onclick="addManualSale()">Add</button>
-      </div>
-      <h4 id="manualTotal" class="total-label">Total: ₦0</h4>
-      <div id="manualList" class="manual-list"></div>
-    </div>
-  </section>
+<button onclick="startSession()">Start Session</button>
 
-  <!-- ─── Report Buttons ─────────────────────── -->
-  <section class="report-bar">
-    <button class="btn btn-outline" onclick="toggleDailyReportPanel()">Daily Revenue Report</button>
-    <button class="btn btn-outline" onclick="toggleStationReportPanel()">Station Usage Report</button>
-  </section>
-  <div id="dailyReportPanel" class="report-panel" style="display:none;"></div>
-  <div id="stationReportPanel" class="report-panel" style="display:none;"></div>
+<h3 id="income">Income: ₦0</h3>
 
-  <!-- ─── LIVE COUNTDOWN GRID ────────────────── -->
-  <section class="active-grid-section">
-    <h3>Active Stations</h3>
-    <div id="activeGrid" class="active-grid">
-      <p id="noActiveMsg" class="hint-text grid-empty-msg">No active sessions. Start one above.</p>
-    </div>
-  </section>
+<hr>
 
-  <!-- ─── Completed Sessions Table ───────────── -->
-  <section class="table-section">
-    <h3>Completed Sessions & History</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Receipt</th>
-            <th>Station</th>
-            <th>Customer</th>
-            <th>Duration</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody id="sessions"></tbody>
-      </table>
-    </div>
-    <p id="noSessionsMsg" class="hint-text" style="display:none;">No completed sessions yet.</p>
-  </section>
-<div class="control-card">
-  <button onclick="loadReceipts()">View Receipts</button>
-  <div id="receiptPanel"></div>
-</div>
-  <!-- ─── Toast Container ────────────────────── -->
-  <div id="toastContainer"></div>
-<div style="margin-top:20px;">
-  <button onclick="test()">TEST API</button>
-</div>
+<h3>Purchase</h3>
 
-<script>
-function test() {
-  if (!window.api) {
-    alert("API NOT LOADED (preload issue)");
-    return;
-  }
+<input id="customerName" placeholder="Customer Name">
+<input id="itemName" placeholder="Item">
+<input id="purchasePrice" type="number" placeholder="Price">
+<input id="qty" type="number" value="1">
 
-  window.api.ping().then(res => alert(res));
-}
-</script>
-  <script src="renderer.js"></script>
+<button onclick="addPurchase()">Add Purchase</button>
 
+<hr>
+
+<button onclick="toggleSummary()">📊 Summary</button>
+<div id="summaryPanel" style="display:none; background:#111; padding:10px;"></div>
+
+<button onclick="toggleReport()">📄 Invoice Report</button>
+<div id="reportPanel" style="display:none; background:#111; padding:10px;"></div>
+
+<hr>
+
+<table border="1">
+  <thead>
+    <tr>
+      <th>Receipt</th>
+      <th>Type</th>
+      <th>Customer/Station</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Date</th>
+      <th>Status</th>
+      <th>Countdown</th>
+      <th>Amount</th>
+    </tr>
+  </thead>
+
+  <tbody id="table"></tbody>
+</table>
+
+<script src="renderer.js"></script>
 </body>
 </html>
