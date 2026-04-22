@@ -3,8 +3,60 @@ const { ipcRenderer } = require("electron");
 let sessions = [];
 let purchases = [];
 
+// 🔥 CONTROL FLAGS
+let isRendering = false;
+let renderTimer = null;
+let isTyping = false;
+
+// ================= DETECT INPUT FOCUS =================
+document.addEventListener("focusin", (e) => {
+  if (e.target.tagName === "INPUT") {
+    isTyping = true;
+  }
+});
+
+document.addEventListener("focusout", (e) => {
+  if (e.target.tagName === "INPUT") {
+    isTyping = false;
+  }
+});
+
+// ================= LOGIN =================
+function login() {
+
+  const pinInput = document.getElementById("pinInput");
+  if (!pinInput) return;
+
+  const pin = pinInput.value;
+
+  if (!pin) {
+    alert("Enter PIN");
+    return;
+  }
+
+  ipcRenderer.send("login", pin);
+}
+
+// ================= RECEIVE LOGIN =================
+ipcRenderer.on("login-result", (e, data) => {
+
+  const roleDisplay = document.getElementById("roleDisplay");
+  if (roleDisplay) {
+    roleDisplay.innerText = "Role: " + data.role;
+  }
+
+  const resetBtn = document.getElementById("resetBtn");
+  if (resetBtn) {
+    resetBtn.style.display =
+      data.role === "admin" ? "block" : "none";
+  }
+
+});
+
 // ================= SESSION =================
 function startSession() {
+
+  if (isTyping) return;
 
   const station = document.getElementById("station").value;
   const pricePerGame = Number(document.getElementById("pricePerGame").value);
@@ -38,6 +90,8 @@ function startSession() {
 // ================= PURCHASE =================
 function addPurchase() {
 
+  if (isTyping) return;
+
   const customer = document.getElementById("customerName").value;
   const item = document.getElementById("itemName").value;
   const price = Number(document.getElementById("purchasePrice").value);
@@ -60,6 +114,7 @@ function addPurchase() {
   document.getElementById("customerName").value = "";
   document.getElementById("itemName").value = "";
   document.getElementById("purchasePrice").value = "";
+  document.getElementById("qty").value = "";
 }
 
 // ================= LOAD =================
@@ -67,14 +122,17 @@ function load() {
   ipcRenderer.send("get-data");
 }
 
-ipcRenderer.on("saved", () => {
-  load();
-});
+ipcRenderer.on("saved", () => load());
 
 ipcRenderer.on("data", (e, data) => {
-  sessions = data.sessions;
-  purchases = data.purchases;
-  render();
+
+  sessions = data.sessions || [];
+  purchases = data.purchases || [];
+
+  // 🔥 DO NOT RENDER IF USER IS TYPING
+  if (!isTyping) {
+    safeRender();
+  }
 });
 
 // ================= HELPERS =================
@@ -85,21 +143,37 @@ function formatTime(t) {
 function countdown(end) {
   const diff = end - Date.now();
   if (diff <= 0) return "EXPIRED";
-  return Math.floor(diff / 60000) + "m " + Math.floor((diff % 60000) / 1000) + "s";
+  return Math.floor(diff / 60000) + "m " +
+         Math.floor((diff % 60000) / 1000) + "s";
+}
+
+// ================= SAFE RENDER =================
+function safeRender() {
+
+  clearTimeout(renderTimer);
+
+  renderTimer = setTimeout(() => {
+    render();
+  }, 100);
 }
 
 // ================= RENDER =================
 function render() {
 
-  const table = document.getElementById("table");
-  table.innerHTML = "";
+  if (isRendering) return;
+  isRendering = true;
 
+  const table = document.getElementById("table");
+
+  let html = "";
   let sessionTotal = 0;
   let purchaseTotal = 0;
 
   const combined = [];
 
-  sessions.forEach(s => {
+  for (let s of sessions) {
+    sessionTotal += s.amount;
+
     combined.push({
       type: "SESSION",
       invoice: s.invoice,
@@ -109,10 +183,11 @@ function render() {
       date: s.date,
       amount: s.amount
     });
-    sessionTotal += s.amount;
-  });
+  }
 
-  purchases.forEach(p => {
+  for (let p of purchases) {
+    purchaseTotal += p.total;
+
     combined.push({
       type: "PURCHASE",
       invoice: p.invoice,
@@ -122,12 +197,11 @@ function render() {
       date: p.date,
       amount: p.total
     });
-    purchaseTotal += p.total;
-  });
+  }
 
   combined.sort((a, b) => a.invoice - b.invoice);
 
-  combined.forEach(item => {
+  for (let item of combined) {
 
     let status = "-";
     let cd = "-";
@@ -141,7 +215,7 @@ function render() {
       status = "Completed";
     }
 
-    table.innerHTML += `
+    html += `
       <tr>
         <td>${item.invoice}</td>
         <td>${item.type}</td>
@@ -154,13 +228,17 @@ function render() {
         <td>₦${item.amount}</td>
       </tr>
     `;
-  });
+  }
+
+  table.innerHTML = html;
 
   const grand = sessionTotal + purchaseTotal;
 
   document.getElementById("income").innerText = "Income: ₦" + grand;
 
   updateSummary(sessionTotal, purchaseTotal, grand);
+
+  isRendering = false;
 }
 
 // ================= SUMMARY =================
@@ -185,27 +263,43 @@ function toggleReport() {
   const p = document.getElementById("reportPanel");
   p.style.display = p.style.display === "none" ? "block" : "none";
 
-  let combined = [];
+  const all = [];
 
   sessions.forEach(s => {
-    combined.push({ invoice: s.invoice, type: "SESSION", amount: s.amount, date: s.date });
+    all.push({ invoice: s.invoice, type: "SESSION", amount: s.amount, date: s.date });
   });
 
   purchases.forEach(pu => {
-    combined.push({ invoice: pu.invoice, type: "PURCHASE", amount: pu.total, date: pu.date });
+    all.push({ invoice: pu.invoice, type: "PURCHASE", amount: pu.total, date: pu.date });
   });
 
-  combined.sort((a, b) => a.invoice - b.invoice);
+  all.sort((a, b) => a.invoice - b.invoice);
 
   let html = "<h3>📄 Invoice Report</h3>";
 
-  combined.forEach(i => {
+  for (let i of all) {
     html += `<p>${i.invoice} | ${i.type} | ₦${i.amount} | ${i.date}</p>`;
-  });
+  }
 
   p.innerHTML = html;
 }
 
-// ================= LIVE =================
-setInterval(render, 1000);
+function factoryReset() {
+
+  if (!confirm("⚠️ This will DELETE ALL DATA permanently.")) return;
+
+  // 🔥 SHOW LOADING MESSAGE FIRST
+  document.body.innerHTML = "<h2 style='color:red;text-align:center;margin-top:50px;'>Resetting system...</h2>";
+
+  // 🔥 THEN SEND RESET COMMAND
+  ipcRenderer.send("factory-reset-db");
+}
+// ================= LIVE UPDATE =================
+setInterval(() => {
+  if (!isTyping) {
+    ipcRenderer.send("get-data");
+  }
+}, 5000);
+
+// ================= INIT =================
 load();

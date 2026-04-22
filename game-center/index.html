@@ -9,6 +9,17 @@
 
 <h1>🎮 GAME CENTER POS</h1>
 
+<!-- ================= LOGIN ================= -->
+<h3>🔐 Login</h3>
+
+<input id="pinInput" type="password" placeholder="Enter Admin PIN">
+<button onclick="login()">Login</button>
+
+<p id="roleDisplay">Role: cashier</p>
+
+<hr>
+
+<!-- ================= SESSION ================= -->
 <h3>Game Session</h3>
 
 <input id="station" placeholder="Station">
@@ -22,6 +33,7 @@
 
 <hr>
 
+<!-- ================= PURCHASE ================= -->
 <h3>Purchase</h3>
 
 <input id="customerName" placeholder="Customer Name">
@@ -33,15 +45,37 @@
 
 <hr>
 
-<button onclick="toggleSummary()">📊 Summary</button>
-<div id="summaryPanel" style="display:none; background:#111; padding:10px;"></div>
+<!-- ================= ADMIN ================= -->
+<h3>🔐 Admin Panel</h3>
 
-<button onclick="toggleReport()">📄 Invoice Report</button>
-<div id="reportPanel" style="display:none; background:#111; padding:10px;"></div>
+<button id="resetBtn"
+        onclick="factoryReset()"
+        style="display:none; background:red; color:white; padding:10px; border:none;">
+  ⚠ Factory Reset Database
+</button>
 
 <hr>
 
-<table border="1">
+<!-- ================= SUMMARY ================= -->
+<button onclick="toggleSummary()">📊 Summary</button>
+
+<div id="summaryPanel"
+     style="display:none; background:#111; padding:10px; margin-top:10px;">
+</div>
+
+<hr>
+
+<!-- ================= REPORT ================= -->
+<button onclick="toggleReport()">📄 Invoice Report</button>
+
+<div id="reportPanel"
+     style="display:none; background:#111; padding:10px; margin-top:10px;">
+</div>
+
+<hr>
+
+<!-- ================= TABLE ================= -->
+<table border="1" width="100%">
   <thead>
     <tr>
       <th>Receipt</th>
@@ -59,6 +93,17 @@
   <tbody id="table"></tbody>
 </table>
 
+<!-- ================= SCRIPT ================= -->
 <script src="renderer.js"></script>
+<script>
+document.querySelectorAll("input").forEach(input => {
+  input.addEventListener("focus", () => {
+    document.body.style.overflow = "hidden";
+  });
+  input.addEventListener("blur", () => {
+    document.body.style.overflow = "auto";
+  });
+});
+</script>
 </body>
 </html>
