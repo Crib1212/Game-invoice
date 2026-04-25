@@ -10,20 +10,15 @@ let isTyping = false;
 
 // ================= DETECT INPUT FOCUS =================
 document.addEventListener("focusin", (e) => {
-  if (e.target.tagName === "INPUT") {
-    isTyping = true;
-  }
+  if (e.target.tagName === "INPUT") isTyping = true;
 });
 
 document.addEventListener("focusout", (e) => {
-  if (e.target.tagName === "INPUT") {
-    isTyping = false;
-  }
+  if (e.target.tagName === "INPUT") isTyping = false;
 });
 
 // ================= LOGIN =================
 function login() {
-
   const pinInput = document.getElementById("pinInput");
   if (!pinInput) return;
 
@@ -80,7 +75,7 @@ function startSession() {
     pricePerGame,
     gameMinutes,
     amount,
-    date: new Date().toLocaleDateString()
+    date: new Date().toISOString().split("T")[0] // ✅ FIXED DATE
   });
 
   document.getElementById("station").value = "";
@@ -108,7 +103,7 @@ function addPurchase() {
     price,
     qty,
     total: price * qty,
-    date: new Date().toLocaleDateString()
+    date: new Date().toISOString().split("T")[0] // ✅ FIXED DATE
   });
 
   document.getElementById("customerName").value = "";
@@ -129,7 +124,6 @@ ipcRenderer.on("data", (e, data) => {
   sessions = data.sessions || [];
   purchases = data.purchases || [];
 
-  // 🔥 DO NOT RENDER IF USER IS TYPING
   if (!isTyping) {
     safeRender();
   }
@@ -149,9 +143,7 @@ function countdown(end) {
 
 // ================= SAFE RENDER =================
 function safeRender() {
-
   clearTimeout(renderTimer);
-
   renderTimer = setTimeout(() => {
     render();
   }, 100);
@@ -168,11 +160,17 @@ function render() {
   let html = "";
   let sessionTotal = 0;
   let purchaseTotal = 0;
+  let dailyTotals = {}; // 🔥 NEW
 
   const combined = [];
 
+  // ===== SESSIONS =====
   for (let s of sessions) {
+
     sessionTotal += s.amount;
+
+    if (!dailyTotals[s.date]) dailyTotals[s.date] = 0;
+    dailyTotals[s.date] += s.amount;
 
     combined.push({
       type: "SESSION",
@@ -185,8 +183,13 @@ function render() {
     });
   }
 
+  // ===== PURCHASES =====
   for (let p of purchases) {
+
     purchaseTotal += p.total;
+
+    if (!dailyTotals[p.date]) dailyTotals[p.date] = 0;
+    dailyTotals[p.date] += p.total;
 
     combined.push({
       type: "PURCHASE",
@@ -233,10 +236,9 @@ function render() {
   table.innerHTML = html;
 
   const grand = sessionTotal + purchaseTotal;
-
   document.getElementById("income").innerText = "Income: ₦" + grand;
 
-  updateSummary(sessionTotal, purchaseTotal, grand);
+  updateSummary(sessionTotal, purchaseTotal, grand, dailyTotals);
 
   isRendering = false;
 }
@@ -247,13 +249,37 @@ function toggleSummary() {
   p.style.display = p.style.display === "none" ? "block" : "none";
 }
 
-function updateSummary(s, p, g) {
+function updateSummary(s, p, g, dailyTotals) {
+
+  let dailyHTML = "";
+
+  const sortedDates = Object.keys(dailyTotals)
+    .sort((a, b) => new Date(b) - new Date(a));
+
+  for (let date of sortedDates) {
+    dailyHTML += `
+      <div style="display:flex;justify-content:space-between;padding:5px 0;">
+        <span>${date}</span>
+        <span>₦${dailyTotals[date]}</span>
+      </div>
+    `;
+  }
+
   document.getElementById("summaryPanel").innerHTML = `
     <h3>📊 Summary</h3>
+
     <p>Session Total: ₦${s}</p>
     <p>Purchase Total: ₦${p}</p>
+
     <hr>
+
     <h3 style="color:#00ff88;">Grand Total: ₦${g}</h3>
+
+    <hr>
+
+    <h4>📅 Daily Sales</h4>
+
+    ${dailyHTML || "<p>No sales yet</p>"}
   `;
 }
 
@@ -284,17 +310,18 @@ function toggleReport() {
   p.innerHTML = html;
 }
 
+// ================= RESET =================
 function factoryReset() {
 
   if (!confirm("⚠️ This will DELETE ALL DATA permanently.")) return;
 
-  // 🔥 SHOW LOADING MESSAGE FIRST
-  document.body.innerHTML = "<h2 style='color:red;text-align:center;margin-top:50px;'>Resetting system...</h2>";
+  document.body.innerHTML =
+    "<h2 style='color:red;text-align:center;margin-top:50px;'>Resetting system...</h2>";
 
-  // 🔥 THEN SEND RESET COMMAND
   ipcRenderer.send("factory-reset-db");
 }
-// ================= LIVE UPDATE =================
+
+// ================= AUTO REFRESH =================
 setInterval(() => {
   if (!isTyping) {
     ipcRenderer.send("get-data");
