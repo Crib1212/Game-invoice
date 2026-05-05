@@ -9,15 +9,17 @@
 
 <h1>🎮 GAME CENTER POS SYSTEM</h1>
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
 <h3>🔐 Login</h3>
+
 <input id="pinInput" type="password" placeholder="Enter Admin PIN">
 <button onclick="login()">Login</button>
+
 <p id="roleDisplay">Role: cashier</p>
 
 <hr>
 
-<!-- SESSION -->
+<!-- ================= SESSION ================= -->
 <h3>🎮 Game Session</h3>
 
 <input id="station" placeholder="Station">
@@ -31,7 +33,7 @@
 
 <hr>
 
-<!-- PURCHASE -->
+<!-- ================= PURCHASE ================= -->
 <h3>🛒 Purchase</h3>
 
 <input id="customerName" placeholder="Customer Name">
@@ -43,24 +45,66 @@
 
 <hr>
 
-<!-- FILTER -->
+<!-- ================= FILTER ================= -->
 <h3>📅 Date Filter</h3>
+
 <input type="date" id="startDate">
 <input type="date" id="endDate">
+
 <button onclick="applyDateFilter()">Apply</button>
 <button onclick="clearFilter()">Clear</button>
 
 <hr>
 
-<!-- SUMMARY -->
-<button onclick="toggleSummary()">📊 Summary</button>
-<div id="summaryPanel" style="display:none;background:#111;color:white;padding:10px;"></div>
+<!-- ================= PRINT OPTIONS ================= -->
+<h3>🖨 Print Options</h3>
+
+<input type="date" id="printDate">
+
+<button onclick="printSelectedDate()">Print Selected Date</button>
+<button onclick="printAll()">Print All</button>
+<button onclick="printSelected()">Print Selected Invoice</button>
 
 <hr>
 
-<!-- TABLES -->
+<!-- ================= SUMMARY ================= -->
+<button onclick="toggleSummary()">📊 Summary</button>
+
+<div id="summaryPanel"
+  style="display:none;background:#111;color:white;padding:10px;border-radius:5px;">
+</div>
+
+<hr>
+
+<!-- ================= ADMIN CONTROLS ================= -->
+<h3>⚠️ Admin Controls</h3>
+
+<div id="adminControls" style="display:none;">
+
+  <button style="background:red;color:white;" onclick="factoryReset()">
+    🧨 Factory Reset
+  </button>
+
+  <hr>
+
+  <h4>🔐 Change Admin Password</h4>
+
+  <input id="oldPin" type="password" placeholder="Old Password">
+  <input id="newPin" type="password" placeholder="New Password">
+  <input id="confirmPin" type="password" placeholder="Confirm Password">
+
+  <button onclick="changeAdminPassword()">
+    Change Password
+  </button>
+
+</div>
+
+<hr>
+
+<!-- ================= MAIN TABLE ================= -->
 <div id="tableContainer"></div>
 
+<!-- ================= SCRIPT ================= -->
 <script src="renderer.js"></script>
 
 </body>
