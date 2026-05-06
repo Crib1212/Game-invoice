@@ -3,12 +3,16 @@ const { ipcRenderer } = require("electron");
 let sessions = [];
 let purchases = [];
 
-// 🔥 CONTROL FLAGS
+let filterStart = null;
+let filterEnd = null;
+
+let hiddenTables = {};
+
 let isRendering = false;
 let renderTimer = null;
 let isTyping = false;
 
-// ================= DETECT INPUT FOCUS =================
+// ================= INPUT DETECT =================
 document.addEventListener("focusin", (e) => {
   if (e.target.tagName === "INPUT") isTyping = true;
 });
@@ -19,34 +23,10 @@ document.addEventListener("focusout", (e) => {
 
 // ================= LOGIN =================
 function login() {
-  const pinInput = document.getElementById("pinInput");
-  if (!pinInput) return;
-
-  const pin = pinInput.value;
-
-  if (!pin) {
-    alert("Enter PIN");
-    return;
-  }
-
+  const pin = document.getElementById("pinInput").value;
+  if (!pin) return alert("Enter PIN");
   ipcRenderer.send("login", pin);
 }
-
-// ================= RECEIVE LOGIN =================
-ipcRenderer.on("login-result", (e, data) => {
-
-  const roleDisplay = document.getElementById("roleDisplay");
-  if (roleDisplay) {
-    roleDisplay.innerText = "Role: " + data.role;
-  }
-
-  const resetBtn = document.getElementById("resetBtn");
-  if (resetBtn) {
-    resetBtn.style.display =
-      data.role === "admin" ? "block" : "none";
-  }
-
-});
 
 // ================= SESSION =================
 function startSession() {
@@ -59,23 +39,23 @@ function startSession() {
   const customerMinutes = Number(document.getElementById("customerMinutes").value);
 
   if (!station || !pricePerGame || !gameMinutes || !customerMinutes) {
-    alert("Fill all session fields");
-    return;
+    return alert("Fill all session fields");
   }
 
-  const start = Date.now();
-  const end = start + customerMinutes * 60000;
+  const startTime = Date.now();
+  const endTime = startTime + customerMinutes * 60000;
+
   const amount = (customerMinutes / gameMinutes) * pricePerGame;
 
   ipcRenderer.send("save-session", {
     station,
-    startTime: start,
-    endTime: end,
+    startTime,
+    endTime,
     customerMinutes,
     pricePerGame,
     gameMinutes,
     amount,
-    date: new Date().toISOString().split("T")[0] // ✅ FIXED DATE
+    date: new Date().toISOString().split("T")[0]
   });
 
   document.getElementById("station").value = "";
@@ -93,8 +73,7 @@ function addPurchase() {
   const qty = Number(document.getElementById("qty").value);
 
   if (!customer || !item || !price || !qty) {
-    alert("Fill all purchase fields");
-    return;
+    return alert("Fill all purchase fields");
   }
 
   ipcRenderer.send("save-purchase", {
@@ -103,13 +82,8 @@ function addPurchase() {
     price,
     qty,
     total: price * qty,
-    date: new Date().toISOString().split("T")[0] // ✅ FIXED DATE
+    date: new Date().toISOString().split("T")[0]
   });
-
-  document.getElementById("customerName").value = "";
-  document.getElementById("itemName").value = "";
-  document.getElementById("purchasePrice").value = "";
-  document.getElementById("qty").value = "";
 }
 
 // ================= LOAD =================
@@ -120,14 +94,25 @@ function load() {
 ipcRenderer.on("saved", () => load());
 
 ipcRenderer.on("data", (e, data) => {
-
   sessions = data.sessions || [];
   purchases = data.purchases || [];
-
-  if (!isTyping) {
-    safeRender();
-  }
+  if (!isTyping) safeRender();
 });
+
+// ================= FILTER =================
+function applyDateFilter() {
+  filterStart = document.getElementById("startDate").value;
+  filterEnd = document.getElementById("endDate").value;
+  safeRender();
+}
+
+function clearFilter() {
+  filterStart = null;
+  filterEnd = null;
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+  safeRender();
+}
 
 // ================= HELPERS =================
 function formatTime(t) {
@@ -144,103 +129,153 @@ function countdown(end) {
 // ================= SAFE RENDER =================
 function safeRender() {
   clearTimeout(renderTimer);
-  renderTimer = setTimeout(() => {
-    render();
-  }, 100);
+  renderTimer = setTimeout(render, 120);
 }
 
-// ================= RENDER =================
+// ================= MAIN RENDER =================
 function render() {
 
   if (isRendering) return;
   isRendering = true;
 
-  const table = document.getElementById("table");
+  const container = document.getElementById("tableContainer");
 
-  let html = "";
+  let grouped = {};
   let sessionTotal = 0;
   let purchaseTotal = 0;
-  let dailyTotals = {}; // 🔥 NEW
+  let dailyTotals = {};
 
-  const combined = [];
+  // ================= SESSIONS =================
+  sessions.forEach(s => {
 
-  // ===== SESSIONS =====
-  for (let s of sessions) {
+    if (filterStart && s.date < filterStart) return;
+    if (filterEnd && s.date > filterEnd) return;
 
     sessionTotal += s.amount;
+    dailyTotals[s.date] = (dailyTotals[s.date] || 0) + s.amount;
 
-    if (!dailyTotals[s.date]) dailyTotals[s.date] = 0;
-    dailyTotals[s.date] += s.amount;
+    if (!grouped[s.date]) grouped[s.date] = [];
 
-    combined.push({
+    grouped[s.date].push({
+      ...s,
       type: "SESSION",
-      invoice: s.invoice,
-      name: s.station,
-      start: s.startTime,
-      end: s.endTime,
-      date: s.date,
-      amount: s.amount
+      name: s.station
     });
-  }
+  });
 
-  // ===== PURCHASES =====
-  for (let p of purchases) {
+  // ================= PURCHASES =================
+  purchases.forEach(p => {
+
+    if (filterStart && p.date < filterStart) return;
+    if (filterEnd && p.date > filterEnd) return;
 
     purchaseTotal += p.total;
+    dailyTotals[p.date] = (dailyTotals[p.date] || 0) + p.total;
 
-    if (!dailyTotals[p.date]) dailyTotals[p.date] = 0;
-    dailyTotals[p.date] += p.total;
+    if (!grouped[p.date]) grouped[p.date] = [];
 
-    combined.push({
+    grouped[p.date].push({
+      ...p,
       type: "PURCHASE",
-      invoice: p.invoice,
-      name: p.customer,
-      start: p.startTime,
-      end: null,
-      date: p.date,
-      amount: p.total
+      name: p.customer
     });
-  }
+  });
 
-  combined.sort((a, b) => a.invoice - b.invoice);
+  const dates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
-  for (let item of combined) {
+  let html = "";
 
-    let status = "-";
-    let cd = "-";
-    let end = "-";
+  for (let date of dates) {
 
-    if (item.type === "SESSION") {
-      cd = countdown(item.end);
-      status = cd === "EXPIRED" ? "Expired" : "Active";
-      end = formatTime(item.end);
-    } else {
-      status = "Completed";
-    }
+    const id = date.replace(/-/g, "_");
+    const hidden = hiddenTables[id];
 
     html += `
-      <tr>
-        <td>${item.invoice}</td>
-        <td>${item.type}</td>
-        <td>${item.name}</td>
-        <td>${formatTime(item.start)}</td>
-        <td>${end}</td>
-        <td>${item.date}</td>
-        <td>${status}</td>
-        <td>${cd}</td>
-        <td>₦${item.amount}</td>
-      </tr>
+      <div style="border:1px solid #444;margin-bottom:15px;padding:10px;">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3>📅 ${date}</h3>
+
+          <div>
+            <button onclick="printDaily('${date}')">🖨 Print Day</button>
+            <button onclick="toggleTable('${id}')">
+              ${hidden ? "Expand" : "Collapse"}
+            </button>
+          </div>
+        </div>
+
+        <div id="table_${id}" style="display:${hidden ? 'none' : 'block'}">
+
+          <table border="1" width="100%">
+            <thead>
+              <tr>
+                <th>Invoice</th>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+                <th>Countdown</th>
+                <th>Amount</th>
+                <th>Print</th>
+              </tr>
+            </thead>
+
+            <tbody>
+    `;
+
+    grouped[date].forEach(item => {
+
+      let status = "-";
+      let cd = "-";
+      let end = "-";
+
+      if (item.type === "SESSION") {
+        cd = countdown(item.endTime);
+        status = cd === "EXPIRED" ? "Expired" : "Active";
+        end = formatTime(item.endTime);
+      } else {
+        status = "Done";
+      }
+
+      html += `
+        <tr>
+          <td>${item.invoice}</td>
+          <td>${item.type}</td>
+          <td>${item.name}</td>
+          <td>${item.startTime ? formatTime(item.startTime) : "-"}</td>
+          <td>${end}</td>
+          <td>${status}</td>
+          <td>${cd}</td>
+          <td>₦${item.amount || item.total}</td>
+          <td><button onclick='printReceipt(${JSON.stringify(item)})'>🖨</button></td>
+        </tr>
+      `;
+    });
+
+    html += `
+            </tbody>
+          </table>
+
+        </div>
+      </div>
     `;
   }
 
-  table.innerHTML = html;
+  container.innerHTML = html;
 
-  const grand = sessionTotal + purchaseTotal;
-  document.getElementById("income").innerText = "Income: ₦" + grand;
+  document.getElementById("income").innerText =
+    "Income: ₦" + (sessionTotal + purchaseTotal);
 
-  updateSummary(sessionTotal, purchaseTotal, grand, dailyTotals);
+  updateSummary(sessionTotal, purchaseTotal, sessionTotal + purchaseTotal, dailyTotals);
 
   isRendering = false;
+}
+
+// ================= TOGGLE FIX =================
+function toggleTable(id) {
+  hiddenTables[id] = !hiddenTables[id];
+  safeRender();
 }
 
 // ================= SUMMARY =================
@@ -251,82 +286,116 @@ function toggleSummary() {
 
 function updateSummary(s, p, g, dailyTotals) {
 
-  let dailyHTML = "";
+  let html = "";
 
-  const sortedDates = Object.keys(dailyTotals)
-    .sort((a, b) => new Date(b) - new Date(a));
-
-  for (let date of sortedDates) {
-    dailyHTML += `
-      <div style="display:flex;justify-content:space-between;padding:5px 0;">
-        <span>${date}</span>
-        <span>₦${dailyTotals[date]}</span>
-      </div>
-    `;
-  }
+  Object.keys(dailyTotals)
+    .sort((a, b) => new Date(b) - new Date(a))
+    .forEach(date => {
+      html += `<p>${date} : ₦${dailyTotals[date]}</p>`;
+    });
 
   document.getElementById("summaryPanel").innerHTML = `
-    <h3>📊 Summary</h3>
-
-    <p>Session Total: ₦${s}</p>
-    <p>Purchase Total: ₦${p}</p>
-
+    <h3>Summary</h3>
+    <p>Session: ₦${s}</p>
+    <p>Purchase: ₦${p}</p>
+    <h2>Total: ₦${g}</h2>
     <hr>
-
-    <h3 style="color:#00ff88;">Grand Total: ₦${g}</h3>
-
-    <hr>
-
-    <h4>📅 Daily Sales</h4>
-
-    ${dailyHTML || "<p>No sales yet</p>"}
+    ${html}
   `;
 }
 
-// ================= REPORT =================
-function toggleReport() {
+// ================= FULL SESSION PRINT (BOLD FIX) =================
+function printReceipt(item) {
 
-  const p = document.getElementById("reportPanel");
-  p.style.display = p.style.display === "none" ? "block" : "none";
+  const win = window.open("", "", "width=380,height=650");
 
-  const all = [];
+  const isSession = item.type === "SESSION";
 
-  sessions.forEach(s => {
-    all.push({ invoice: s.invoice, type: "SESSION", amount: s.amount, date: s.date });
-  });
+  win.document.write(`
+    <html>
+    <head>
+      <style>
+        body { font-family: monospace; text-align:center; padding:10px; }
+        .b { font-weight:bold; font-size:16px; margin:5px 0; }
+        hr { border:1px dashed #000; }
+      </style>
+    </head>
+    <body>
 
-  purchases.forEach(pu => {
-    all.push({ invoice: pu.invoice, type: "PURCHASE", amount: pu.total, date: pu.date });
-  });
+      <h2 class="b">🎮 GAME CENTER POS</h2>
+      <hr>
 
-  all.sort((a, b) => a.invoice - b.invoice);
+      <div class="b">INVOICE: ${item.invoice}</div>
+      <div class="b">TYPE: ${item.type}</div>
+      <div class="b">NAME: ${item.name}</div>
 
-  let html = "<h3>📄 Invoice Report</h3>";
+      <hr>
+  `);
 
-  for (let i of all) {
-    html += `<p>${i.invoice} | ${i.type} | ₦${i.amount} | ${i.date}</p>`;
+  if (isSession) {
+
+    win.document.write(`
+      <div class="b">START TIME: ${new Date(item.startTime).toLocaleTimeString()}</div>
+      <div class="b">END TIME: ${new Date(item.endTime).toLocaleTimeString()}</div>
+      <div class="b">CUSTOMER MINUTES: ${item.customerMinutes}</div>
+    `);
+
+  } else {
+
+    win.document.write(`
+      <div class="b">ITEM: ${item.item}</div>
+      <div class="b">QTY: ${item.qty}</div>
+    `);
   }
 
-  p.innerHTML = html;
+  win.document.write(`
+      <hr>
+      <div class="b">AMOUNT: ₦${item.amount || item.total}</div>
+      <div class="b">DATE: ${item.date}</div>
+
+      <hr>
+      <div class="b">THANK YOU 🙏</div>
+
+      <script>window.onload = () => window.print();</script>
+
+    </body>
+    </html>
+  `);
+
+  win.document.close();
 }
 
-// ================= RESET =================
-function factoryReset() {
+// ================= DAILY PRINT =================
+function printDaily(date) {
 
-  if (!confirm("⚠️ This will DELETE ALL DATA permanently.")) return;
+  const win = window.open("", "", "width=500,height=700");
 
-  document.body.innerHTML =
-    "<h2 style='color:red;text-align:center;margin-top:50px;'>Resetting system...</h2>";
+  let total = 0;
 
-  ipcRenderer.send("factory-reset-db");
+  let rows = sessions.concat(purchases)
+    .filter(x => x.date === date)
+    .map(i => {
+      total += i.amount || i.total;
+      return `<p>${i.invoice} - ₦${i.amount || i.total}</p>`;
+    }).join("");
+
+  win.document.write(`
+    <h2>${date}</h2>
+    ${rows}
+    <h3>Total: ₦${total}</h3>
+    <script>window.onload = () => window.print();</script>
+  `);
+
+  win.document.close();
 }
 
 // ================= AUTO REFRESH =================
 setInterval(() => {
-  if (!isTyping) {
-    ipcRenderer.send("get-data");
-  }
+  if (!isTyping) ipcRenderer.send("get-data");
 }, 5000);
 
-// ================= INIT =================
+setInterval(() => {
+  if (!isTyping) safeRender();
+}, 1000);
+
 load();
