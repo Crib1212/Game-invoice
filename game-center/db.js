@@ -1,88 +1,106 @@
-const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
+// ================= db.js =================
 
-// ================= DB PATH =================
-const dbPath = path.join(__dirname, "pos.db");
+const sqlite3 =
+  require("sqlite3").verbose();
 
-// ================= CONNECT =================
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error("❌ Database connection failed:", err.message);
-  } else {
-    console.log("✅ Connected to SQLite database");
-  }
-});
+const db =
+  new sqlite3.Database("./pos.db");
 
-// ================= PERFORMANCE MODE =================
-db.exec(`PRAGMA journal_mode = WAL;`);
-db.exec(`PRAGMA synchronous = NORMAL;`);
+// ================= ADMIN =================
 
-// ================= INIT =================
-db.serialize(() => {
+db.run(`
+  CREATE TABLE IF NOT EXISTS admin(
 
-  // ================= META =================
-  db.run(`
-    CREATE TABLE IF NOT EXISTS meta (
-      id INTEGER PRIMARY KEY,
-      invoiceCounter INTEGER DEFAULT 0
-    )
-  `, err => {
-    if (err) console.error("Meta table error:", err.message);
-  });
+    id INTEGER PRIMARY KEY,
+    password TEXT
 
-  db.run(`
-    INSERT OR IGNORE INTO meta (id, invoiceCounter)
-    VALUES (1, 0)
-  `);
+  )
+`);
 
-  // ================= SESSIONS =================
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice INTEGER,
-      station TEXT,
-      startTime INTEGER,
-      endTime INTEGER,
-      customerMinutes INTEGER,
-      pricePerGame INTEGER,
-      gameMinutes INTEGER,
-      amount INTEGER,
-      date TEXT
-    )
-  `, err => {
-    if (err) console.error("Sessions table error:", err.message);
-  });
+db.get(
+  "SELECT * FROM admin WHERE id=1",
+  (err,row)=>{
 
-  // ================= PURCHASES =================
-  db.run(`
-    CREATE TABLE IF NOT EXISTS purchases (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice INTEGER,
-      customer TEXT,
-      item TEXT,
-      startTime INTEGER,
-      endTime INTEGER,
-      price INTEGER,
-      qty INTEGER,
-      total INTEGER,
-      date TEXT
-    )
-  `, err => {
-    if (err) console.error("Purchases table error:", err.message);
-  });
+    if(!row){
 
-});
+      db.run(`
+        INSERT INTO admin(
+          id,
+          password
+        )
 
-// ================= SAFE CLOSE =================
-db.safeClose = function (callback) {
-  this.close((err) => {
-    if (err) {
-      console.error("❌ Error closing DB:", err.message);
-    } else {
-      console.log("🛑 Database closed safely");
+        VALUES(
+          1,
+          '1234'
+        )
+      `);
+
     }
-    if (callback) callback();
-  });
-};
+  }
+);
+
+// ================= SESSIONS =================
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS sessions(
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    invoice INTEGER,
+
+    station TEXT,
+
+    pricePerGame REAL,
+
+    gameMinutes INTEGER,
+
+    customerMinutes INTEGER,
+
+    amount REAL,
+
+    startTime INTEGER,
+
+    endTime INTEGER,
+
+    date TEXT
+
+  )
+`);
+
+// ================= PRODUCTS =================
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS products(
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    name TEXT,
+
+    price REAL,
+
+    qty INTEGER
+
+  )
+`);
+
+// ================= SALES =================
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS sales(
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    invoice INTEGER,
+
+    product TEXT,
+
+    qty INTEGER,
+
+    total REAL,
+
+    date TEXT
+
+  )
+`);
 
 module.exports = db;

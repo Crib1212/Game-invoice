@@ -1,110 +1,195 @@
+<!-- ================= index.html ================= -->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Game Center POS</title>
+  <meta charset="UTF-8">
+  <title>RetailMan Game POS</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h1>🎮 GAME CENTER POS SYSTEM</h1>
+<div class="sidebar">
 
-<!-- ================= LOGIN ================= -->
-<h3>🔐 Login</h3>
+  <h2>🎮 GAME POS</h2>
 
-<input id="pinInput" type="password" placeholder="Enter Admin PIN">
-<button onclick="login()">Login</button>
-
-<p id="roleDisplay">Role: cashier</p>
-
-<hr>
-
-<!-- ================= SESSION ================= -->
-<h3>🎮 Game Session</h3>
-
-<input id="station" placeholder="Station">
-<input id="pricePerGame" type="number" placeholder="Price per Game (₦)">
-<input id="gameMinutes" type="number" placeholder="Game Minutes">
-<input id="customerMinutes" type="number" placeholder="Customer Minutes">
-
-<button onclick="startSession()">Start Session</button>
-
-<h3 id="income">Income: ₦0</h3>
-
-<hr>
-
-<!-- ================= PURCHASE ================= -->
-<h3>🛒 Purchase</h3>
-
-<input id="customerName" placeholder="Product Name">
-<input id="itemName" placeholder="Item">
-<input id="purchasePrice" type="number" placeholder="Price">
-<input id="qty" type="number" value="1">
-
-<button onclick="addPurchase()">Add Purchase</button>
-
-<hr>
-
-<!-- ================= FILTER ================= -->
-<h3>📅 Date Filter</h3>
-
-<input type="date" id="startDate">
-<input type="date" id="endDate">
-
-<button onclick="applyDateFilter()">Apply</button>
-<button onclick="clearFilter()">Clear</button>
-
-<hr>
-
-<!-- ================= PRINT OPTIONS ================= -->
-<h3>🖨 Print Options</h3>
-
-<input type="date" id="printDate">
-
-<button onclick="printSelectedDate()">Print Selected Date</button>
-<button onclick="printAll()">Print All</button>
-<button onclick="printSelected()">Print Selected Invoice</button>
-
-<hr>
-
-<!-- ================= SUMMARY ================= -->
-<button onclick="toggleSummary()">📊 Summary</button>
-
-<div id="summaryPanel"
-  style="display:none;background:#111;color:white;padding:10px;border-radius:5px;">
-</div>
-
-<hr>
-
-<!-- ================= ADMIN CONTROLS ================= -->
-<h3>⚠️ Admin Controls</h3>
-
-<div id="adminControls" style="display:none;">
-
-  <button style="background:red;color:white;" onclick="factoryReset()">
-    🧨 Factory Reset
-  </button>
-
-  <hr>
-
-  <h4>🔐 Change Admin Password</h4>
-
-  <input id="oldPin" type="password" placeholder="Old Password">
-  <input id="newPin" type="password" placeholder="New Password">
-  <input id="confirmPin" type="password" placeholder="Confirm Password">
-
-  <button onclick="changeAdminPassword()">
-    Change Password
-  </button>
+  <button onclick="showPage('homePage')">🏠 Home</button>
+  <button onclick="showPage('sessionPage')">🎮 Sessions</button>
+  <button onclick="showPage('salesPage')">💰 Sales</button>
+  <button onclick="showPage('reportPage')">📊 Reports</button>
+  <button onclick="showPage('adminPage')">⚙️ Admin</button>
 
 </div>
 
-<hr>
+<div class="main">
 
-<!-- ================= MAIN TABLE ================= -->
-<div id="tableContainer"></div>
+  <!-- ================= HOME ================= -->
 
-<!-- ================= SCRIPT ================= -->
+  <div id="homePage" class="page">
+
+    <h1>🎮 GAME CENTER POS</h1>
+
+    <div class="card">
+      <h2 id="income">Income: ₦0</h2>
+    </div>
+
+  </div>
+
+  <!-- ================= SESSION ================= -->
+
+  <div id="sessionPage" class="page" style="display:none;">
+
+    <h2>🎮 Sessions</h2>
+
+    <div class="card">
+
+      <input id="station" placeholder="Station">
+
+      <input id="pricePerGame"
+             type="number"
+             placeholder="Price Per Game">
+
+      <input id="gameMinutes"
+             type="number"
+             placeholder="Game Minutes">
+
+      <input id="customerMinutes"
+             type="number"
+             placeholder="Customer Minutes">
+
+      <button onclick="startSession()">
+        Start Session
+      </button>
+
+    </div>
+
+    <div class="card">
+
+      <h3>📅 Filter</h3>
+
+      <input type="date" id="startDate">
+      <input type="date" id="endDate">
+
+      <button onclick="applyFilter()">Apply</button>
+      <button onclick="clearFilter()">Clear</button>
+
+    </div>
+
+    <div id="sessionContainer"></div>
+
+  </div>
+
+  <!-- ================= SALES ================= -->
+
+  <div id="salesPage" class="page" style="display:none;">
+
+    <h2>💰 Sales</h2>
+
+    <div class="card">
+
+      <h3>📦 Products</h3>
+
+      <input id="productName" placeholder="Product Name">
+
+      <input id="productPrice"
+             type="number"
+             placeholder="Selling Price">
+
+      <input id="productQty"
+             type="number"
+             placeholder="Quantity">
+
+      <button onclick="addProduct()">
+        Add Product
+      </button>
+
+      <div id="productContainer"></div>
+
+    </div>
+
+    <div class="card">
+
+      <h3>🧾 Sales History</h3>
+
+      <div id="salesHistory"></div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= REPORT ================= -->
+
+  <div id="reportPage" class="page" style="display:none;">
+
+    <div class="card">
+
+      <h2>📊 Daily Summary</h2>
+
+      <div id="summaryPanel"></div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= ADMIN ================= -->
+
+  <div id="adminPage" class="page" style="display:none;">
+
+    <div class="card">
+
+      <h2>🔐 Login</h2>
+
+      <input type="password"
+             id="pinInput"
+             placeholder="Admin Password">
+
+      <button onclick="login()">
+        Login
+      </button>
+
+      <p id="roleDisplay">
+        Role: cashier
+      </p>
+
+    </div>
+
+    <div class="card"
+         id="adminControls"
+         style="display:none;">
+
+      <h2>⚙️ Admin Controls</h2>
+
+      <button class="danger"
+              onclick="factoryReset()">
+        🧨 Factory Reset
+      </button>
+
+      <hr>
+
+      <h3>🔐 Change Password</h3>
+
+      <input type="password"
+             id="oldPassword"
+             placeholder="Old Password">
+
+      <input type="password"
+             id="newPassword"
+             placeholder="New Password">
+
+      <input type="password"
+             id="confirmPassword"
+             placeholder="Confirm Password">
+
+      <button onclick="changePassword()">
+        Change Password
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
 <script src="renderer.js"></script>
 
 </body>

@@ -1,70 +1,259 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #0f1115;
-  color: #fff;
-  padding: 20px;
+/* ================= BASE ================= */
+body{
+  margin:0;
+  padding:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#0f172a;
+  color:white;
+  display:flex;
+  height:100vh;
+  overflow:hidden;
 }
 
-h1 {
-  text-align: center;
+/* ================= SIDEBAR ================= */
+.sidebar{
+  width:240px;
+  background:#020617;
+  padding:20px;
+  border-right:2px solid #1e293b;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow-y:auto;
 }
 
-.card {
-  background: #1a1d24;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 8px;
+.sidebar h2{
+  text-align:center;
+  margin-bottom:20px;
+  color:#38bdf8;
 }
 
-input {
-  margin: 5px;
-  padding: 8px;
-  border-radius: 4px;
-  border: none;
+.sidebar button{
+  background:#111827;
+  border:none;
+  color:white;
+  padding:14px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:15px;
+  transition:0.2s;
+  text-align:left;
 }
 
-button {
-  padding: 8px 12px;
-  margin: 5px;
-  border-radius: 4px;
-  border: none;
-  background: #00b894;
-  color: white;
-  cursor: pointer;
+.sidebar button:hover{
+  background:#2563eb;
+  transform:translateX(4px);
 }
 
-button:hover {
-  background: #019875;
+/* ================= MAIN ================= */
+.main{
+  flex:1;
+  padding:20px;
+  overflow-y:auto;
 }
 
-.danger {
-  background: red;
+/* ================= PAGE ANIMATION ================= */
+.page{
+  animation:fade 0.2s ease;
 }
 
-.btn-row {
-  display: flex;
-  gap: 10px;
+@keyframes fade{
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1; transform:translateY(0);}
 }
 
-.summary {
-  display: none;
-  margin-top: 10px;
-  background: #111;
-  padding: 10px;
+/* ================= HEADINGS ================= */
+h1,h2,h3{
+  margin-top:0;
+  color:#38bdf8;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+/* ================= CARD ================= */
+.card{
+  background:#111827;
+  padding:15px;
+  border-radius:12px;
+  margin-top:15px;
+  border:1px solid #1e293b;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
-th, td {
-  border: 1px solid #333;
-  padding: 8px;
-  text-align: center;
+/* ================= INPUTS ================= */
+input, select{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  margin-bottom:6px;
+  border:none;
+  border-radius:8px;
+  background:#1e293b;
+  color:white;
+  font-size:14px;
+  box-sizing:border-box;
 }
 
-tr:hover {
-  background: #2a2f3a;
+input:focus{
+  outline:none;
+  border:1px solid #38bdf8;
+  box-shadow:0 0 6px rgba(56,189,248,0.3);
+}
+
+/* ================= BUTTONS ================= */
+button{
+  background:#2563eb;
+  border:none;
+  color:white;
+  padding:12px 16px;
+  border-radius:8px;
+  cursor:pointer;
+  margin-top:5px;
+  margin-right:5px;
+  font-weight:bold;
+  transition:0.2s;
+}
+
+button:hover{
+  opacity:0.9;
+  transform:scale(1.02);
+}
+
+.danger{
+  background:#dc2626;
+}
+
+/* =========================================================
+   🔥 SESSION - HORIZONTAL POS ROW (IMPORTANT FIX)
+========================================================= */
+#sessionPage .card:first-of-type{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+
+#sessionPage .card:first-of-type input{
+  flex:1;
+  min-width:160px;
+}
+
+#sessionPage .card:first-of-type button{
+  height:44px;
+  white-space:nowrap;
+}
+
+/* =========================================================
+   📅 FILTER - HORIZONTAL ROW
+========================================================= */
+#sessionPage .card:nth-of-type(2){
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+
+#sessionPage .card:nth-of-type(2) input{
+  flex:1;
+  min-width:180px;
+}
+
+#sessionPage .card:nth-of-type(2) button{
+  height:44px;
+}
+
+/* =========================================================
+   💰 SALES SECTION
+========================================================= */
+#salesPage .card input{
+  margin-bottom:8px;
+}
+
+/* ================= TABLE ================= */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+  background:#111827;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+table th{
+  background:#1e293b;
+  color:#38bdf8;
+  padding:12px;
+  text-align:left;
+}
+
+table td{
+  padding:12px;
+  border-top:1px solid #1e293b;
+}
+
+table tr:hover{
+  background:#1e293b;
+}
+
+/* ================= COUNTDOWN ================= */
+.cd{
+  font-weight:bold;
+  color:#22c55e;
+}
+
+.expired{
+  color:#ef4444;
+}
+
+/* ================= SUMMARY ================= */
+#summaryPanel{
+  margin-top:10px;
+}
+
+/* ================= SCROLLBAR ================= */
+::-webkit-scrollbar{
+  width:10px;
+}
+
+::-webkit-scrollbar-track{
+  background:#0f172a;
+}
+
+::-webkit-scrollbar-thumb{
+  background:#334155;
+  border-radius:20px;
+}
+
+/* ================= MOBILE ================= */
+@media(max-width:900px){
+
+  body{
+    flex-direction:column;
+  }
+
+  .sidebar{
+    width:100%;
+    flex-direction:row;
+    overflow-x:auto;
+    overflow-y:hidden;
+    border-right:none;
+    border-bottom:2px solid #1e293b;
+  }
+
+  .sidebar button{
+    min-width:140px;
+    text-align:center;
+  }
+
+  .main{
+    padding:10px;
+  }
+
+  #sessionPage .card:first-of-type,
+  #sessionPage .card:nth-of-type(2){
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  table{
+    font-size:12px;
+  }
 }
