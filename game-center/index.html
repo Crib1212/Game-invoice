@@ -1,149 +1,263 @@
-<!-- ================= index.html ================= -->
+
 <!DOCTYPE html>
 <html>
+
 <head>
+
   <meta charset="UTF-8">
-  <title>RetailMan Game POS</title>
-  <link rel="stylesheet" href="style.css">
+
+  <title>
+    RetailMan Game POS
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
 </head>
 
 <body>
 
 <div class="sidebar">
 
-  <h2>🎮 GAME POS</h2>
+  <h2>
+    🎮 GAME POS
+  </h2>
 
-  <button onclick="showPage('homePage')">🏠 Home</button>
-  <button onclick="showPage('sessionPage')">🎮 Sessions</button>
-  <button onclick="showPage('salesPage')">💰 Sales</button>
-  <button onclick="showPage('reportPage')">📊 Reports</button>
-  <button onclick="showPage('adminPage')">⚙️ Admin</button>
+  <button
+    type="button"
+    onclick="showPage('homePage')"
+  >
+    🏠 Home
+  </button>
+
+  <button
+    type="button"
+    onclick="showPage('sessionPage')"
+  >
+    🎮 Sessions
+  </button>
+
+  <button
+    type="button"
+    onclick="showPage('salesPage')"
+  >
+    💰 Sales
+  </button>
+
+  <button
+    type="button"
+    onclick="showPage('reportPage')"
+  >
+    📊 Reports
+  </button>
+
+  <button
+    type="button"
+    onclick="showPage('adminPage')"
+  >
+    ⚙️ Admin
+  </button>
 
 </div>
 
 <div class="main">
 
-  <!-- ================= HOME ================= -->
+  <!-- HOME -->
 
-  <div id="homePage" class="page">
+  <div
+    id="homePage"
+    class="page"
+  >
 
-    <h1>🎮 GAME CENTER POS</h1>
+    <h1>
+      🎮 GAME CENTER POS
+    </h1>
 
     <div class="card">
-      <h2 id="income">Income: ₦0</h2>
+
+      <h2 id="income">
+        Income: ₦0
+      </h2>
+
     </div>
 
   </div>
 
-  <!-- ================= SESSION ================= -->
+  <!-- SESSION -->
 
-  <div id="sessionPage" class="page" style="display:none;">
+  <div
+    id="sessionPage"
+    class="page"
+    style="display:none;"
+  >
 
-    <h2>🎮 Sessions</h2>
+    <h2>
+      🎮 Sessions
+    </h2>
 
     <div class="card">
 
-      <input id="station" placeholder="Station">
+      <input
+        id="station"
+        placeholder="Station"
+        autocomplete="off"
+      >
 
-      <input id="pricePerGame"
-             type="number"
-             placeholder="Price Per Game">
+      <input
+        id="pricePerGame"
+        type="number"
+        min="1"
+        placeholder="Price Per Game"
+        autocomplete="off"
+      >
 
-      <input id="gameMinutes"
-             type="number"
-             placeholder="Game Minutes">
+      <input
+        id="gameMinutes"
+        type="number"
+        min="1"
+        placeholder="Game Minutes"
+        autocomplete="off"
+      >
 
-      <input id="customerMinutes"
-             type="number"
-             placeholder="Customer Minutes">
+      <input
+        id="customerMinutes"
+        type="number"
+        min="1"
+        placeholder="Customer Minutes"
+        autocomplete="off"
+      >
 
-      <button onclick="startSession()">
+      <button
+        type="button"
+        onclick="startSession()"
+      >
         Start Session
       </button>
 
     </div>
 
-    <div class="card">
-
-      <h3>📅 Filter</h3>
-
-      <input type="date" id="startDate">
-      <input type="date" id="endDate">
-
-      <button onclick="applyFilter()">Apply</button>
-      <button onclick="clearFilter()">Clear</button>
-
-    </div>
-
-    <div id="sessionContainer"></div>
+    <div
+      id="sessionContainer"
+    ></div>
 
   </div>
 
-  <!-- ================= SALES ================= -->
+  <!-- SALES -->
 
-  <div id="salesPage" class="page" style="display:none;">
+  <div
+    id="salesPage"
+    class="page"
+    style="display:none;"
+  >
 
-    <h2>💰 Sales</h2>
+    <h2>
+      💰 Sales
+    </h2>
 
     <div class="card">
 
-      <h3>📦 Products</h3>
+      <h3>
+        📦 Products
+      </h3>
 
-      <input id="productName" placeholder="Product Name">
+      <input
+        id="productName"
+        placeholder="Product Name"
+        autocomplete="off"
+      >
 
-      <input id="productPrice"
-             type="number"
-             placeholder="Selling Price">
+      <input
+        id="productPrice"
+        type="number"
+        min="1"
+        placeholder="Selling Price"
+        autocomplete="off"
+      >
 
-      <input id="productQty"
-             type="number"
-             placeholder="Quantity">
+      <input
+        id="productQty"
+        type="number"
+        min="1"
+        placeholder="Quantity"
+        autocomplete="off"
+      >
 
-      <button onclick="addProduct()">
+      <button
+        type="button"
+        onclick="addProduct()"
+      >
         Add Product
       </button>
 
-      <div id="productContainer"></div>
+      <div
+        id="productContainer"
+      ></div>
 
     </div>
 
     <div class="card">
 
-      <h3>🧾 Sales History</h3>
+      <h3>
+        🧾 Sales History
+      </h3>
 
-      <div id="salesHistory"></div>
-
-    </div>
-
-  </div>
-
-  <!-- ================= REPORT ================= -->
-
-  <div id="reportPage" class="page" style="display:none;">
-
-    <div class="card">
-
-      <h2>📊 Daily Summary</h2>
-
-      <div id="summaryPanel"></div>
+      <div
+        id="salesHistory"
+      ></div>
 
     </div>
 
   </div>
 
-  <!-- ================= ADMIN ================= -->
+  <!-- REPORT -->
 
-  <div id="adminPage" class="page" style="display:none;">
+  <div
+    id="reportPage"
+    class="page"
+    style="display:none;"
+  >
 
     <div class="card">
 
-      <h2>🔐 Login</h2>
+      <h2>
+        📊 Summary
+      </h2>
 
-      <input type="password"
-             id="pinInput"
-             placeholder="Admin Password">
+      <div
+        id="summaryPanel"
+      ></div>
 
-      <button onclick="login()">
+    </div>
+
+  </div>
+
+  <!-- ADMIN -->
+
+  <div
+    id="adminPage"
+    class="page"
+    style="display:none;"
+  >
+
+    <div class="card">
+
+      <h2>
+        🔐 Login
+      </h2>
+
+      <input
+        type="password"
+        id="pinInput"
+        placeholder="Admin Password"
+        autocomplete="off"
+      >
+
+      <button
+        type="button"
+        onclick="login()"
+      >
         Login
       </button>
 
@@ -153,34 +267,55 @@
 
     </div>
 
-    <div class="card"
-         id="adminControls"
-         style="display:none;">
+    <div
+      class="card"
+      id="adminControls"
+      style="display:none;"
+    >
 
-      <h2>⚙️ Admin Controls</h2>
+      <h2>
+        ⚙️ Admin Controls
+      </h2>
 
-      <button class="danger"
-              onclick="factoryReset()">
+      <button
+        type="button"
+        class="danger"
+        onclick="factoryReset()"
+      >
         🧨 Factory Reset
       </button>
 
       <hr>
 
-      <h3>🔐 Change Password</h3>
+      <h3>
+        🔐 Change Password
+      </h3>
 
-      <input type="password"
-             id="oldPassword"
-             placeholder="Old Password">
+      <input
+        type="password"
+        id="oldPassword"
+        placeholder="Old Password"
+        autocomplete="off"
+      >
 
-      <input type="password"
-             id="newPassword"
-             placeholder="New Password">
+      <input
+        type="password"
+        id="newPassword"
+        placeholder="New Password"
+        autocomplete="off"
+      >
 
-      <input type="password"
-             id="confirmPassword"
-             placeholder="Confirm Password">
+      <input
+        type="password"
+        id="confirmPassword"
+        placeholder="Confirm Password"
+        autocomplete="off"
+      >
 
-      <button onclick="changePassword()">
+      <button
+        type="button"
+        onclick="changePassword()"
+      >
         Change Password
       </button>
 
