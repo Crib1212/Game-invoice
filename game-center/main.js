@@ -41,6 +41,36 @@ db.get(
   }
 );
 
+// COUNTER TABLE
+db.run(`
+  CREATE TABLE IF NOT EXISTS counter(
+
+    id INTEGER PRIMARY KEY,
+
+    currentNumber INTEGER
+
+  )
+`);
+
+db.get(
+  "SELECT * FROM counter WHERE id=1",
+  (err,row)=>{
+
+    if(!row){
+
+      db.run(`
+        INSERT INTO counter(
+          id,
+          currentNumber
+        )
+        VALUES(1,0)
+      `);
+
+    }
+
+  }
+);
+
 // SESSIONS
 db.run(`
   CREATE TABLE IF NOT EXISTS sessions(
@@ -121,6 +151,32 @@ app.on("window-all-closed",()=>{
 
 });
 
+// ================= INVOICE NUMBER =================
+
+function getNextInvoice(callback){
+
+  db.get(
+    "SELECT * FROM counter WHERE id=1",
+    (err,row)=>{
+
+      let next =
+        (row.currentNumber || 0) + 1;
+
+      db.run(
+        "UPDATE counter SET currentNumber=? WHERE id=1",
+        [next],
+        ()=>{
+
+          callback(next);
+
+        }
+      );
+
+    }
+  );
+
+}
+
 // ================= LOGIN =================
 
 ipcMain.on("login",(e,pin)=>{
@@ -130,26 +186,33 @@ ipcMain.on("login",(e,pin)=>{
     (err,row)=>{
 
       if(err){
-        return e.reply("error","Database error");
-      }
 
-      if(!row){
-        return e.reply("login-result",{
-          role:"cashier"
-        });
+        return e.reply(
+          "login-result",
+          {
+            role:"cashier"
+          }
+        );
+
       }
 
       if(pin === row.password){
 
-        e.reply("login-result",{
-          role:"admin"
-        });
+        e.reply(
+          "login-result",
+          {
+            role:"admin"
+          }
+        );
 
       }else{
 
-        e.reply("login-result",{
-          role:"cashier"
-        });
+        e.reply(
+          "login-result",
+          {
+            role:"cashier"
+          }
+        );
 
       }
 
@@ -167,20 +230,11 @@ ipcMain.on("change-password",(e,data)=>{
     (err,row)=>{
 
       if(err){
+
         return e.reply(
           "password-result",
           {
             message:"Database error"
-          }
-        );
-      }
-
-      if(!row){
-
-        return e.reply(
-          "password-result",
-          {
-            message:"Admin not found"
           }
         );
 
@@ -191,7 +245,7 @@ ipcMain.on("change-password",(e,data)=>{
         return e.reply(
           "password-result",
           {
-            message:"Wrong old password"
+            message:"Old password incorrect"
           }
         );
 
@@ -205,7 +259,7 @@ ipcMain.on("change-password",(e,data)=>{
           e.reply(
             "password-result",
             {
-              message:"Password changed"
+              message:"Password changed successfully"
             }
           );
 
@@ -221,42 +275,43 @@ ipcMain.on("change-password",(e,data)=>{
 
 ipcMain.on("save-session",(e,data)=>{
 
-  const invoice =
-    "INV-" + Date.now();
+  getNextInvoice((invoice)=>{
 
-  db.run(`
+    db.run(`
 
-    INSERT INTO sessions(
+      INSERT INTO sessions(
+
+        invoice,
+        station,
+        pricePerGame,
+        gameMinutes,
+        customerMinutes,
+        amount,
+        startTime,
+        endTime,
+        date
+
+      )
+
+      VALUES(?,?,?,?,?,?,?,?,?)
+
+    `,[
 
       invoice,
-      station,
-      pricePerGame,
-      gameMinutes,
-      customerMinutes,
-      amount,
-      startTime,
-      endTime,
-      date
+      data.station,
+      data.pricePerGame,
+      data.gameMinutes,
+      data.customerMinutes,
+      data.amount,
+      data.startTime,
+      data.endTime,
+      data.date
 
-    )
+    ],()=>{
 
-    VALUES(?,?,?,?,?,?,?,?,?)
+      win.webContents.send("saved");
 
-  `,[
-
-    invoice,
-    data.station,
-    data.pricePerGame,
-    data.gameMinutes,
-    data.customerMinutes,
-    data.amount,
-    data.startTime,
-    data.endTime,
-    data.date
-
-  ],()=>{
-
-    win.webContents.send("saved");
+    });
 
   });
 
@@ -297,12 +352,21 @@ ipcMain.on("add-product",(e,data)=>{
 ipcMain.on("sell-product",(e,data)=>{
 
   const id = data.id;
-  const qty = data.qty;
+  const qty = Number(data.qty);
 
   db.get(
     "SELECT * FROM products WHERE id=?",
     [id],
     (err,product)=>{
+
+      if(err){
+
+        return e.reply(
+          "error",
+          "Database error"
+        );
+
+      }
 
       if(!product){
 
@@ -317,60 +381,61 @@ ipcMain.on("sell-product",(e,data)=>{
 
         return e.reply(
           "error",
-          "Not enough stock"
+          "Insufficient stock"
         );
 
       }
 
-      const newQty =
-        product.qty - qty;
+      getNextInvoice((invoice)=>{
 
-      const total =
-        product.price * qty;
+        const newQty =
+          product.qty - qty;
 
-      const invoice =
-        "SALE-" + Date.now();
+        const total =
+          product.price * qty;
 
-      const date =
-        new Date()
-        .toISOString()
-        .split("T")[0];
+        const date =
+          new Date()
+          .toISOString()
+          .split("T")[0];
 
-      db.run(
-        "UPDATE products SET qty=? WHERE id=?",
-        [newQty,id],
-        ()=>{
+        db.run(
+          "UPDATE products SET qty=? WHERE id=?",
+          [newQty,id],
+          ()=>{
 
-          db.run(`
+            db.run(`
 
-            INSERT INTO sales(
+              INSERT INTO sales(
+
+                invoice,
+                product,
+                qty,
+                total,
+                date
+
+              )
+
+              VALUES(?,?,?,?,?)
+
+            `,[
 
               invoice,
-              product,
+              product.name,
               qty,
               total,
               date
 
-            )
+            ],()=>{
 
-            VALUES(?,?,?,?,?)
+              win.webContents.send("saved");
 
-          `,[
+            });
 
-            invoice,
-            product.name,
-            qty,
-            total,
-            date
+          }
+        );
 
-          ],()=>{
-
-            win.webContents.send("saved");
-
-          });
-
-        }
-      );
+      });
 
     }
   );
@@ -412,13 +477,17 @@ ipcMain.on("get-data",(e)=>{
 
 });
 
-// ================= RESET =================
+// ================= FACTORY RESET =================
 
 ipcMain.on("factory-reset",()=>{
 
   db.run("DELETE FROM sessions");
   db.run("DELETE FROM products");
   db.run("DELETE FROM sales");
+
+  db.run(
+    "UPDATE counter SET currentNumber=0 WHERE id=1"
+  );
 
   win.webContents.send("saved");
 
