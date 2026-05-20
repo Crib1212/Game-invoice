@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 
@@ -79,6 +78,14 @@
 
       <h2 id="income">
         Income: ₦0
+      </h2>
+
+    </div>
+
+    <div class="card">
+
+      <h2 id="profitDisplay">
+        Profit: ₦0
       </h2>
 
     </div>
@@ -168,6 +175,18 @@
         autocomplete="off"
       >
 
+      <!-- COST PRICE -->
+
+      <input
+        id="productCostPrice"
+        type="number"
+        min="1"
+        placeholder="Cost Price"
+        autocomplete="off"
+      >
+
+      <!-- SELLING PRICE -->
+
       <input
         id="productPrice"
         type="number"
@@ -175,6 +194,8 @@
         placeholder="Selling Price"
         autocomplete="off"
       >
+
+      <!-- QUANTITY -->
 
       <input
         id="productQty"
@@ -196,6 +217,8 @@
       ></div>
 
     </div>
+
+    <!-- SALES HISTORY -->
 
     <div class="card">
 
@@ -241,6 +264,8 @@
     style="display:none;"
   >
 
+    <!-- LOGIN -->
+
     <div class="card">
 
       <h2>
@@ -267,6 +292,8 @@
 
     </div>
 
+    <!-- ADMIN CONTROLS -->
+
     <div
       class="card"
       id="adminControls"
@@ -286,6 +313,8 @@
       </button>
 
       <hr>
+
+      <!-- CHANGE PASSWORD -->
 
       <h3>
         🔐 Change Password

@@ -1,10 +1,8 @@
 // ================= db.js =================
 
-const sqlite3 =
-  require("sqlite3").verbose();
+const sqlite3 = require("sqlite3").verbose();
 
-const db =
-  new sqlite3.Database("./pos.db");
+const db = new sqlite3.Database("./pos.db");
 
 // ================= ADMIN =================
 
@@ -17,13 +15,13 @@ db.run(`
 
 db.get(
   "SELECT * FROM admin WHERE id=1",
-  (err,row)=>{
+  (err, row) => {
 
-    if(!row){
+    if (!row) {
 
       db.run(`
-        INSERT INTO admin(id,password)
-        VALUES(1,'1234')
+        INSERT INTO admin(id, password)
+        VALUES(1, '1234')
       `);
 
     }
@@ -31,24 +29,25 @@ db.get(
   }
 );
 
-// ================= COUNTER (UNIFIED INVOICE SYSTEM) =================
+// ================= COUNTER =================
+// FIXED: unified invoice system (SAFE + CONSISTENT)
 
 db.run(`
   CREATE TABLE IF NOT EXISTS counter(
     id INTEGER PRIMARY KEY,
-    value INTEGER
+    currentNumber INTEGER
   )
 `);
 
 db.get(
   "SELECT * FROM counter WHERE id=1",
-  (err,row)=>{
+  (err, row) => {
 
-    if(!row){
+    if (!row) {
 
       db.run(`
-        INSERT INTO counter(id,value)
-        VALUES(1,0)
+        INSERT INTO counter(id, currentNumber)
+        VALUES(1, 0)
       `);
 
     }
@@ -61,7 +60,7 @@ db.get(
 db.run(`
   CREATE TABLE IF NOT EXISTS sessions(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    invoice INTEGER,
+    invoice TEXT,
     station TEXT,
     pricePerGame REAL,
     gameMinutes INTEGER,
@@ -79,6 +78,7 @@ db.run(`
   CREATE TABLE IF NOT EXISTS products(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
+    costPrice REAL DEFAULT 0,
     price REAL,
     qty INTEGER
   )
@@ -89,58 +89,41 @@ db.run(`
 db.run(`
   CREATE TABLE IF NOT EXISTS sales(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    invoice INTEGER,
+    invoice TEXT,
     product TEXT,
     qty INTEGER,
+    price REAL DEFAULT 0,
+    costPrice REAL DEFAULT 0,
+    profit REAL DEFAULT 0,
     total REAL,
     date TEXT
   )
 `);
 
 // ================= INVOICE HELPER =================
-// This ensures BOTH sessions and sales use SAME number series
 
-db.get(
-  "SELECT value FROM counter WHERE id=1",
-  (err,row)=>{
+function getNextInvoice(callback) {
 
-    if(err) return;
+  db.get(
+    "SELECT currentNumber FROM counter WHERE id=1",
+    (err, row) => {
 
-    if(!row){
+      let next = (row?.currentNumber || 0) + 1;
 
-      db.run(`
-        INSERT INTO counter(id,value)
-        VALUES(1,0)
-      `);
+      db.run(
+        "UPDATE counter SET currentNumber=? WHERE id=1",
+        [next],
+        () => callback(next)
+      );
 
     }
+  );
 
-  }
-);
+}
 
-// Export helper function
+// ================= EXPORT =================
+
 module.exports = {
-
   db,
-
-  getNextInvoice: function(callback){
-
-    db.get(
-      "SELECT value FROM counter WHERE id=1",
-      (err,row)=>{
-
-        let next =
-          (row?.value || 0) + 1;
-
-        db.run(
-          "UPDATE counter SET value=? WHERE id=1",
-          [next],
-          ()=> callback(next)
-        );
-
-      }
-    );
-
-  }
-
+  getNextInvoice
 };

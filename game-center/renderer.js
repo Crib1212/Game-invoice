@@ -8,9 +8,6 @@ let sales = [];
 
 let role = "cashier";
 
-let filterStart = null;
-let filterEnd = null;
-
 let countdownMap = {};
 let countdownElements = {};
 
@@ -32,7 +29,9 @@ function login(){
   const pin =
     document.getElementById("pinInput").value;
 
-  if(!pin) return alert("Enter password");
+  if(!pin){
+    return alert("Enter password");
+  }
 
   ipcRenderer.send("login", pin);
 
@@ -46,7 +45,9 @@ ipcRenderer.on("login-result",(e,data)=>{
     .innerText = "Role: " + role;
 
   document.getElementById("adminControls").style.display =
-    (role === "admin") ? "block" : "none";
+    role === "admin"
+      ? "block"
+      : "none";
 
 });
 
@@ -111,7 +112,8 @@ function startSession(){
   const amount =
     (customerMinutes / gameMinutes) * pricePerGame;
 
-  const startTime = Date.now();
+  const startTime =
+    Date.now();
 
   const endTime =
     startTime + customerMinutes * 60000;
@@ -143,36 +145,42 @@ function addProduct(){
   const name =
     document.getElementById("productName").value.trim();
 
-  const price =
+  const costPrice =
+    Number(document.getElementById("productCostPrice").value);
+
+  const sellingPrice =
     Number(document.getElementById("productPrice").value);
 
   const qty =
     Number(document.getElementById("productQty").value);
 
-  if(!name || !price || !qty){
+  if(!name || !costPrice || !sellingPrice || !qty){
     return alert("Fill all fields");
   }
 
   ipcRenderer.send("add-product",{
     name,
-    price,
+    costPrice,
+    price:sellingPrice,
     qty
   });
 
   document.getElementById("productName").value = "";
+  document.getElementById("productCostPrice").value = "";
   document.getElementById("productPrice").value = "";
   document.getElementById("productQty").value = "";
 
 }
 
-// ================= SELL PRODUCT (QUANTITY INPUT) =================
+// ================= SELL PRODUCT =================
 
 function sellProduct(id){
 
   const qtyInput =
     document.getElementById("qty-" + id);
 
-  const qty = Number(qtyInput.value);
+  const qty =
+    Number(qtyInput.value);
 
   if(!qty || qty <= 0){
     return alert("Enter quantity");
@@ -190,7 +198,9 @@ function sellProduct(id){
 // ================= LOAD =================
 
 function loadData(){
+
   ipcRenderer.send("get-data");
+
 }
 
 ipcRenderer.on("saved",()=>{
@@ -213,7 +223,9 @@ ipcRenderer.on("data",(e,data)=>{
 });
 
 ipcRenderer.on("error",(e,msg)=>{
+
   alert(msg);
+
 });
 
 // ================= SESSION RENDER =================
@@ -226,31 +238,46 @@ function renderSessions(){
   countdownMap = {};
 
   if(sessions.length === 0){
-    box.innerHTML = "<div class='card'><h3>No sessions</h3></div>";
+
+    box.innerHTML =
+      "<div class='card'><h3>No sessions</h3></div>";
+
     return;
+
   }
 
   let html = "";
 
   sessions.forEach(s=>{
 
-    countdownMap[s.invoice] = s.endTime;
+    countdownMap[s.invoice] =
+      s.endTime;
 
     html += `
       <div class="sessionCard">
 
         <h3>🎮 ${s.station}</h3>
 
-        <button onclick="printSessionReceipt(${s.invoice})">
+        <button
+          onclick="printSessionReceipt(${s.invoice})"
+        >
           🖨 Print
         </button>
 
         <p>Invoice: ${s.invoice}</p>
-        <p>Amount: ₦${s.amount}</p>
+
+        <p>Amount: ₦${Number(s.amount).toFixed(2)}</p>
+
         <p>Minutes: ${s.customerMinutes}</p>
+
         <p>Date: ${s.date}</p>
 
-        <h2 class="cd" data-id="${s.invoice}">--:--</h2>
+        <h2
+          class="cd"
+          data-id="${s.invoice}"
+        >
+          --:--
+        </h2>
 
       </div>
     `;
@@ -261,9 +288,12 @@ function renderSessions(){
 
   countdownElements = {};
 
-  document.querySelectorAll(".cd").forEach(el=>{
-    countdownElements[el.dataset.id] = el;
-  });
+  document.querySelectorAll(".cd")
+    .forEach(el=>{
+
+      countdownElements[el.dataset.id] = el;
+
+    });
 
 }
 
@@ -275,18 +305,31 @@ function renderProducts(){
     document.getElementById("productContainer");
 
   if(products.length === 0){
-    box.innerHTML = "<div class='card'><h3>No products</h3></div>";
+
+    box.innerHTML =
+      "<div class='card'><h3>No products</h3></div>";
+
     return;
+
   }
 
   let html = `
     <table>
+
       <tr>
+
         <th>Name</th>
-        <th>Price</th>
+
+        <th>Cost</th>
+
+        <th>Selling</th>
+
         <th>Qty</th>
+
         <th>Status</th>
+
         <th>Action</th>
+
       </tr>
   `;
 
@@ -296,10 +339,20 @@ function renderProducts(){
       <tr>
 
         <td>${p.name}</td>
-        <td>₦${p.price}</td>
+
+        <td>
+          ₦${Number(p.costPrice || 0).toFixed(2)}
+        </td>
+
+        <td>
+          ₦${Number(p.price || 0).toFixed(2)}
+        </td>
+
         <td>${p.qty}</td>
 
-        <td>${p.qty <= 0 ? "OUT" : "OK"}</td>
+        <td>
+          ${p.qty <= 0 ? "OUT" : "OK"}
+        </td>
 
         <td>
 
@@ -308,7 +361,7 @@ function renderProducts(){
             type="number"
             min="1"
             placeholder="Qty"
-            style="width:60px"
+            style="width:70px"
           >
 
           <button
@@ -325,7 +378,9 @@ function renderProducts(){
 
   });
 
-  html += "</table>";
+  html += `
+    </table>
+  `;
 
   box.innerHTML = html;
 
@@ -339,19 +394,37 @@ function renderSales(){
     document.getElementById("salesHistory");
 
   if(sales.length === 0){
-    box.innerHTML = "<div class='card'><h3>No sales</h3></div>";
+
+    box.innerHTML =
+      "<div class='card'><h3>No sales</h3></div>";
+
     return;
+
   }
 
   let html = `
     <table>
+
       <tr>
+
         <th>Invoice</th>
+
         <th>Product</th>
+
         <th>Qty</th>
+
+        <th>Sell</th>
+
+        <th>Cost</th>
+
+        <th>Profit</th>
+
         <th>Total</th>
+
         <th>Date</th>
+
         <th>Print</th>
+
       </tr>
   `;
 
@@ -361,15 +434,37 @@ function renderSales(){
       <tr>
 
         <td>${s.invoice}</td>
+
         <td>${s.product}</td>
+
         <td>${s.qty}</td>
-        <td>₦${s.total}</td>
+
+        <td>
+          ₦${Number(s.price || 0).toFixed(2)}
+        </td>
+
+        <td>
+          ₦${Number(s.costPrice || 0).toFixed(2)}
+        </td>
+
+        <td>
+          ₦${Number(s.profit || 0).toFixed(2)}
+        </td>
+
+        <td>
+          ₦${Number(s.total || 0).toFixed(2)}
+        </td>
+
         <td>${s.date}</td>
 
         <td>
-          <button onclick="printSaleReceipt(${s.invoice})">
+
+          <button
+            onclick="printSaleReceipt(${s.invoice})"
+          >
             🖨
           </button>
+
         </td>
 
       </tr>
@@ -377,90 +472,228 @@ function renderSales(){
 
   });
 
-  html += "</table>";
+  html += `
+    </table>
+  `;
 
   box.innerHTML = html;
 
 }
 
-// ================= SUMMARY / REPORT (EXPAND + COLLAPSE) =================
+// ================= SUMMARY =================
 
 function renderSummary(){
 
   let sessionTotal = 0;
   let salesTotal = 0;
+  let profitTotal = 0;
 
   sessions.forEach(s=>{
-    sessionTotal += Number(s.amount || 0);
+
+    sessionTotal +=
+      Number(s.amount || 0);
+
   });
 
   sales.forEach(s=>{
-    salesTotal += Number(s.total || 0);
+
+    salesTotal +=
+      Number(s.total || 0);
+
+    profitTotal +=
+      Number(s.profit || 0);
+
   });
 
-  const grand = sessionTotal + salesTotal;
+  const grand =
+    sessionTotal + salesTotal;
 
   document.getElementById("income").innerText =
     "Income: ₦" + grand.toFixed(2);
 
+  const profitDisplay =
+    document.getElementById("profitDisplay");
+
+  if(profitDisplay){
+
+    profitDisplay.innerText =
+      "Profit: ₦" + profitTotal.toFixed(2);
+
+  }
+
   const grouped = {};
 
   sessions.forEach(s=>{
-    if(!grouped[s.date]) grouped[s.date] = { sessions: [], sales: [] };
+
+    if(!grouped[s.date]){
+
+      grouped[s.date] = {
+        sessions: [],
+        sales: []
+      };
+
+    }
+
     grouped[s.date].sessions.push(s);
+
   });
 
   sales.forEach(s=>{
-    if(!grouped[s.date]) grouped[s.date] = { sessions: [], sales: [] };
+
+    if(!grouped[s.date]){
+
+      grouped[s.date] = {
+        sessions: [],
+        sales: []
+      };
+
+    }
+
     grouped[s.date].sales.push(s);
+
   });
 
   let html = `
+
     <h2>📊 REPORT</h2>
-    <h3>Sessions: ₦${sessionTotal}</h3>
-    <h3>Sales: ₦${salesTotal}</h3>
-    <h1>Total: ₦${grand}</h1>
+
+    <h3>
+      Sessions Income:
+      ₦${sessionTotal.toFixed(2)}
+    </h3>
+
+    <h3>
+      Product Sales:
+      ₦${salesTotal.toFixed(2)}
+    </h3>
+
+    <h3>
+      Total Profit:
+      ₦${profitTotal.toFixed(2)}
+    </h3>
+
+    <h1>
+      Total Income:
+      ₦${grand.toFixed(2)}
+    </h1>
+
     <hr>
   `;
 
-  Object.keys(grouped).sort().reverse().forEach(date=>{
+  Object.keys(grouped)
+    .sort()
+    .reverse()
+    .forEach(date=>{
 
-    const day = grouped[date];
+      const day =
+        grouped[date];
 
-    const total =
-      [...day.sessions, ...day.sales]
-        .reduce((a,b)=>a + Number(b.amount || b.total || 0),0);
+      const total =
+        [...day.sessions, ...day.sales]
+          .reduce((a,b)=>
+            a + Number(b.amount || b.total || 0),0);
 
-    html += `
-      <div class="card">
+      const dailyProfit =
+        day.sales.reduce((a,b)=>
+          a + Number(b.profit || 0),0);
 
-        <h3 onclick="this.nextElementSibling.style.display =
-          this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+      html += `
+        <div class="card">
 
-          📅 ${date} - ₦${total}
+          <h3
+            onclick="toggleReport(this)"
+            style="
+              cursor:pointer;
+            "
+          >
 
-        </h3>
+            📅 ${date}
 
-        <div style="display:none">
+            — ₦${total.toFixed(2)}
 
-          <h4>🎮 Sessions</h4>
-          ${day.sessions.map(s=>`
-            <p>${s.station} - ₦${s.amount}</p>
-          `).join("")}
+          </h3>
 
-          <h4>💰 Sales</h4>
-          ${day.sales.map(s=>`
-            <p>${s.product} x${s.qty} = ₦${s.total}</p>
-          `).join("")}
+          <div style="display:none">
+
+            <h4>🎮 Sessions</h4>
+
+            ${
+              day.sessions.map(s=>`
+
+                <p>
+
+                  ${s.station}
+
+                  -
+
+                  ₦${Number(s.amount).toFixed(2)}
+
+                </p>
+
+              `).join("")
+            }
+
+            <h4>💰 Sales</h4>
+
+            ${
+              day.sales.map(s=>`
+
+                <p>
+
+                  ${s.product}
+
+                  x${s.qty}
+
+                  =
+
+                  ₦${Number(s.total).toFixed(2)}
+
+                  |
+
+                  Profit:
+
+                  ₦${Number(s.profit).toFixed(2)}
+
+                </p>
+
+              `).join("")
+            }
+
+            <hr>
+
+            <p>
+
+              <b>
+                Daily Profit:
+              </b>
+
+              ₦${dailyProfit.toFixed(2)}
+
+            </p>
+
+          </div>
 
         </div>
+      `;
 
-      </div>
-    `;
+    });
 
-  });
+  document.getElementById("summaryPanel")
+    .innerHTML = html;
 
-  document.getElementById("summaryPanel").innerHTML = html;
+}
+
+// ================= TOGGLE REPORT =================
+
+function toggleReport(el){
+
+  const div =
+    el.nextElementSibling;
+
+  div.style.display =
+    div.style.display === "none"
+      ? "block"
+      : "none";
 
 }
 
@@ -468,28 +701,92 @@ function renderSummary(){
 
 function printSessionReceipt(invoice){
 
-  const s = sessions.find(x => x.invoice == invoice);
+  const s =
+    sessions.find(x => x.invoice == invoice);
+
   if(!s) return;
 
-  const win = window.open("","_blank","width=350,height=700");
+  const win =
+    window.open(
+      "",
+      "_blank",
+      "width=350,height=700"
+    );
 
   win.document.write(`
     <html>
-    <body style="font-family:monospace;width:80mm">
 
-      <h3>SESSION RECEIPT</h3>
+    <body style="
+      font-family:monospace;
+      width:80mm;
+      padding:10px;
+    ">
 
-      <p>Name: ${s.station}</p>
-      <p>Invoice: ${s.invoice}</p>
-      <p>Start: ${new Date(s.startTime).toLocaleString()}</p>
-      <p>End: ${new Date(s.endTime).toLocaleString()}</p>
-      <p>Minutes: ${s.customerMinutes}</p>
-      <p>Amount: ₦${s.amount}</p>
-      <p>Date: ${s.date}</p>
+      <center>
 
-      <script>window.print()</script>
+        <h2>
+          🎮 GAME CENTER POS
+        </h2>
+
+        <h3>
+          SESSION RECEIPT
+        </h3>
+
+      </center>
+
+      <hr>
+
+      <p>
+        <b>Station:</b>
+        ${s.station}
+      </p>
+
+      <p>
+        <b>Invoice:</b>
+        ${s.invoice}
+      </p>
+
+      <p>
+        <b>Start:</b>
+        ${new Date(s.startTime).toLocaleString()}
+      </p>
+
+      <p>
+        <b>End:</b>
+        ${new Date(s.endTime).toLocaleString()}
+      </p>
+
+      <p>
+        <b>Minutes:</b>
+        ${s.customerMinutes}
+      </p>
+
+      <p>
+        <b>Amount:</b>
+        ₦${Number(s.amount).toFixed(2)}
+      </p>
+
+      <p>
+        <b>Date:</b>
+        ${s.date}
+      </p>
+
+      <hr>
+
+      <center>
+
+        <b>
+          THANK YOU
+        </b>
+
+      </center>
+
+      <script>
+        window.print()
+      </script>
 
     </body>
+
     </html>
   `);
 
@@ -499,50 +796,146 @@ function printSessionReceipt(invoice){
 
 function printSaleReceipt(invoice){
 
-  const s = sales.find(x => x.invoice == invoice);
+  const s =
+    sales.find(x => x.invoice == invoice);
+
   if(!s) return;
 
-  const unitPrice =
-    Number(s.total) / Number(s.qty);
-
-  const win = window.open("","_blank","width=350,height=700");
+  const win =
+    window.open(
+      "",
+      "_blank",
+      "width=350,height=700"
+    );
 
   win.document.write(`
     <html>
-    <body style="font-family:monospace;width:80mm;padding:10px">
+
+    <body style="
+      font-family:monospace;
+      width:80mm;
+      padding:10px;
+    ">
 
       <center>
-        <h2>🏪 GAME CENTER POS</h2>
-        <h3>SALES RECEIPT</h3>
+
+        <h2>
+          🏪 GAME CENTER POS
+        </h2>
+
+        <h3>
+          SALES RECEIPT
+        </h3>
+
       </center>
 
       <hr>
 
-      <p><b>Company:</b> GAME CENTER</p>
-      <p><b>Invoice:</b> ${s.invoice}</p>
-      <p><b>Product:</b> ${s.product}</p>
+      <p>
+
+        <b>Company:</b>
+
+        GAME CENTER
+
+      </p>
+
+      <p>
+
+        <b>Invoice:</b>
+
+        ${s.invoice}
+
+      </p>
+
+      <p>
+
+        <b>Product:</b>
+
+        ${s.product}
+
+      </p>
 
       <hr>
 
-      <p><b>Unit Price:</b> ₦${unitPrice.toFixed(2)}</p>
-      <p><b>Quantity:</b> ${s.qty}</p>
-      <p><b>Total:</b> ₦${s.total}</p>
+      <p>
+
+        <b>Selling Price:</b>
+
+        ₦${Number(s.price || 0).toFixed(2)}
+
+      </p>
+
+      <p>
+
+        <b>Cost Price:</b>
+
+        ₦${Number(s.costPrice || 0).toFixed(2)}
+
+      </p>
+
+      <p>
+
+        <b>Profit:</b>
+
+        ₦${Number(s.profit || 0).toFixed(2)}
+
+      </p>
+
+      <p>
+
+        <b>Quantity:</b>
+
+        ${s.qty}
+
+      </p>
+
+      <p>
+
+        <b>Total:</b>
+
+        ₦${Number(s.total || 0).toFixed(2)}
+
+      </p>
 
       <hr>
 
-      <p><b>Date:</b> ${s.date}</p>
-      <p><b>Cashier:</b> System</p>
+      <p>
+
+        <b>Date:</b>
+
+        ${s.date}
+
+      </p>
+
+      <p>
+
+        <b>Cashier:</b>
+
+        System
+
+      </p>
 
       <hr>
 
-      <center><b>THANK YOU</b></center>
+      <center>
 
-      <script>window.print()</script>
+        <b>
+          THANK YOU
+        </b>
+
+      </center>
+
+      <script>
+        window.print()
+      </script>
 
     </body>
+
     </html>
   `);
+
 }
+
 // ================= RESET =================
 
 function factoryReset(){
@@ -551,7 +944,9 @@ function factoryReset(){
     return alert("Admin only");
   }
 
-  if(!confirm("Reset everything?")) return;
+  if(!confirm("Reset everything?")){
+    return;
+  }
 
   ipcRenderer.send("factory-reset");
 
@@ -561,24 +956,38 @@ function factoryReset(){
 
 setInterval(()=>{
 
-  const now = Date.now();
+  const now =
+    Date.now();
 
   for(let id in countdownMap){
 
-    const el = countdownElements[id];
+    const el =
+      countdownElements[id];
+
     if(!el) continue;
 
-    const diff = countdownMap[id] - now;
+    const diff =
+      countdownMap[id] - now;
 
     if(diff <= 0){
-      el.innerText = "EXPIRED";
+
+      el.innerText =
+        "EXPIRED";
+
       continue;
+
     }
 
-    const m = Math.floor(diff / 60000);
-    const s = Math.floor((diff % 60000)/1000);
+    const m =
+      Math.floor(diff / 60000);
 
-    el.innerText = m + ":" + s.toString().padStart(2,"0");
+    const s =
+      Math.floor((diff % 60000)/1000);
+
+    el.innerText =
+      m +
+      ":" +
+      s.toString().padStart(2,"0");
 
   }
 

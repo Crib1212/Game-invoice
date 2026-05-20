@@ -92,11 +92,13 @@ db.run(`
 
 // PRODUCTS
 db.run(`
+
   CREATE TABLE IF NOT EXISTS products(
 
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 
     name TEXT,
+    costPrice REAL DEFAULT 0,
     price REAL,
     qty INTEGER
 
@@ -105,6 +107,7 @@ db.run(`
 
 // SALES
 db.run(`
+
   CREATE TABLE IF NOT EXISTS sales(
 
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,12 +115,16 @@ db.run(`
     invoice TEXT,
     product TEXT,
     qty INTEGER,
+
+    price REAL DEFAULT 0,
+    costPrice REAL DEFAULT 0,
+    profit REAL DEFAULT 0,
+
     total REAL,
     date TEXT
 
   )
 `);
-
 // ================= WINDOW =================
 
 function createWindow(){
@@ -326,16 +333,18 @@ ipcMain.on("add-product",(e,data)=>{
     INSERT INTO products(
 
       name,
+      costPrice,
       price,
       qty
 
     )
 
-    VALUES(?,?,?)
+    VALUES(?,?,?,?)
 
   `,[
 
     data.name,
+    data.costPrice,
     data.price,
     data.qty
 
@@ -346,7 +355,6 @@ ipcMain.on("add-product",(e,data)=>{
   });
 
 });
-
 // ================= SELL PRODUCT =================
 
 ipcMain.on("sell-product",(e,data)=>{
@@ -394,6 +402,9 @@ ipcMain.on("sell-product",(e,data)=>{
         const total =
           product.price * qty;
 
+          const profit =
+  (product.price - product.costPrice) * qty;
+
         const date =
           new Date()
           .toISOString()
@@ -406,27 +417,37 @@ ipcMain.on("sell-product",(e,data)=>{
 
             db.run(`
 
-              INSERT INTO sales(
+             INSERT INTO sales(
 
-                invoice,
-                product,
-                qty,
-                total,
-                date
+  invoice,
+  product,
+  qty,
 
-              )
+  price,
+  costPrice,
+  profit,
 
-              VALUES(?,?,?,?,?)
+  total,
+  date
+
+)
+
+VALUES(?,?,?,?,?,?,?,?)
 
             `,[
 
-              invoice,
-              product.name,
-              qty,
-              total,
-              date
+  invoice,
+  product.name,
+  qty,
 
-            ],()=>{
+  product.price,
+  product.costPrice,
+  profit,
+
+  total,
+  date
+
+],()=>{
 
               win.webContents.send("saved");
 
@@ -481,14 +502,26 @@ ipcMain.on("get-data",(e)=>{
 
 ipcMain.on("factory-reset",()=>{
 
-  db.run("DELETE FROM sessions");
-  db.run("DELETE FROM products");
-  db.run("DELETE FROM sales");
+  db.serialize(()=>{
 
-  db.run(
-    "UPDATE counter SET currentNumber=0 WHERE id=1"
-  );
+    db.run("DELETE FROM sessions");
 
-  win.webContents.send("saved");
+    db.run("DELETE FROM products");
+
+    db.run("DELETE FROM sales");
+
+    db.run(
+      "UPDATE counter SET currentNumber=0 WHERE id=1"
+    );
+
+    db.run(
+      "DELETE FROM sqlite_sequence"
+    );
+
+    win.webContents.send(
+      "factory-reset-done"
+    );
+
+  });
 
 });
