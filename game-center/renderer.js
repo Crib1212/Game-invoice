@@ -813,14 +813,16 @@ function printSaleReceipt(invoice){
 
     <body style="
       font-family:monospace;
-      width:80mm;
-      padding:10px;
+      width:70mm;
+      padding:13px;
+      font-size:20px;
+      line-height:0.7;
     ">
 
       <center>
 
         <h2>
-          🏪 GAME CENTER POS
+         🎮 WITTY UNISEX SALON AND GAMES
         </h2>
 
         <h3>
@@ -831,13 +833,6 @@ function printSaleReceipt(invoice){
 
       <hr>
 
-      <p>
-
-        <b>Company:</b>
-
-        GAME CENTER
-
-      </p>
 
       <p>
 
@@ -862,14 +857,6 @@ function printSaleReceipt(invoice){
         <b>Selling Price:</b>
 
         ₦${Number(s.price || 0).toFixed(2)}
-
-      </p>
-
-      <p>
-
-        <b>Cost Price:</b>
-
-        ₦${Number(s.costPrice || 0).toFixed(2)}
 
       </p>
 
