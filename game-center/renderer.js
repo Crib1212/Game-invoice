@@ -875,14 +875,6 @@ function printSaleReceipt(invoice){
 
       <p>
 
-        <b>Profit:</b>
-
-        ₦${Number(s.profit || 0).toFixed(2)}
-
-      </p>
-
-      <p>
-
         <b>Quantity:</b>
 
         ${s.qty}
