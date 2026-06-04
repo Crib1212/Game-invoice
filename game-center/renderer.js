@@ -719,7 +719,7 @@ function printSessionReceipt(invoice){
     <body style="
       font-family:monospace;
       width:80mm;
-      padding:10px;
+      padding:8px;
     ">
 
       <center>
